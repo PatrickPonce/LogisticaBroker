@@ -1,0 +1,217 @@
+@using X.PagedList.Mvc.Core
+@using X.PagedList
+@using LogisticaBroker.Models.Enums
+@model IPagedList<LogisticaBroker.Models.Dispatch>
+
+@{
+    ViewData["Title"] = "Gestión de Despachos";
+}
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 text-gray-800 fw-bold"><i class="bi bi-box-seam me-2"></i>Gestión de Despachos</h1>
+        <div>
+            <a asp-action="ExportToExcel" 
+            asp-route-searchTerm="@ViewBag.CurrentSearch"
+            asp-route-clientId="@ViewBag.CurrentClient"
+            asp-route-status="@ViewBag.CurrentStatus"
+            class="btn btn-success shadow-sm me-2">
+                <i class="bi bi-file-earmark-excel me-2"></i>Exportar
+            </a>
+
+            <a asp-action="Create" class="btn btn-primary shadow-sm">
+                <i class="bi bi-plus-lg me-2"></i>Nuevo Despacho
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mb-4 border-0 bg-light">
+        <div class="card-body py-3">
+            <form asp-action="Index" method="get" class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold text-muted">Buscar Texto</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                        <input type="text" name="searchTerm" class="form-control" 
+                               placeholder="Nro. Despacho, BL, Contenedor..." 
+                               value="@ViewBag.CurrentSearch" />
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold text-muted">Cliente</label>
+                    <select name="clientId" class="form-select" asp-items="ViewBag.ClientId">
+                        <option value="">-- Todos los Clientes --</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold text-muted">Estado</label>
+                    <select name="status" class="form-select" asp-items="Html.GetEnumSelectList<DispatchStatus>()">
+                        <option value="">-- Todos los Estados --</option>
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex gap-2">
+                    <button type="submit" class="btn btn-dark flex-grow-1">Filtrar</button>
+                    <a asp-action="Index" class="btn btn-outline-secondary" title="Limpiar Filtros">
+                        <i class="bi bi-x-lg"></i>
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Despacho</th>
+                            <th>Cliente</th>
+                            <th>Estado</th>
+                            <th>Canal</th>
+                            <th>Llegada</th>
+                            <th class="text-end pe-4">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Any())
+                        {
+                            @foreach (var item in Model)
+                            {
+                                var statusBadge = item.Status switch {
+                                    DispatchStatus.Completed => "bg-success",
+                                    DispatchStatus.Released => "bg-info text-dark",
+                                    DispatchStatus.Pending => "bg-secondary",
+                                    _ => "bg-primary"
+                                };
+                                var channelBadge = item.Channel switch {
+                                    DispatchChannel.Green => "bg-success",
+                                    DispatchChannel.Orange => "bg-warning text-dark",
+                                    DispatchChannel.Red => "bg-danger",
+                                    _ => "bg-secondary"
+                                };
+
+                                <tr>
+                                    <td class="fw-bold text-primary">
+                                        <a asp-action="Details" asp-route-id="@item.Id" class="text-decoration-none">
+                                            @item.DispatchNumber
+                                        </a>
+                                        @if(!string.IsNullOrEmpty(item.BLNumber)) {
+                                            <br/><small class="text-muted fw-normal">BL: @item.BLNumber</small>
+                                        }
+                                    </td>
+                                    <td>@item.Client!.CompanyName</td>
+                                    <td><span class="badge @statusBadge">@Html.DisplayFor(m => item.Status)</span></td>
+                                    <td><span class="badge @channelBadge">@Html.DisplayFor(m => item.Channel)</span></td>
+                                    <td>@(item.ArrivalDate?.ToLocalTime().ToString("dd/MM/yyyy") ?? "-")</td>
+                                    <td class="text-end pe-3">
+                                        <div class="btn-group shadow-sm" role="group">
+                                            <button type="button" class="btn btn-sm btn-light border btn-preview" data-id="@item.Id" title="Vista Rápida">
+                                                <i class="bi bi-eye text-primary"></i>
+                                            </button>
+                                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-light border" title="Editar">
+                                                <i class="bi bi-pencil-square text-warning"></i>
+                                            </a>
+                                            <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-light border" title="Expediente Completo">
+                                                <i class="bi bi-folder2-open text-info"></i>
+                                            </a>
+                                            <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-light border" title="Eliminar">
+                                                <i class="bi bi-trash-fill text-danger"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="6" class="text-center py-5 text-muted">
+                                    <i class="bi bi-search fs-1 d-block mb-3 opacity-50"></i>
+                                    No se encontraron despachos con los filtros actuales.
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div class="card-footer bg-white py-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="text-muted small">
+                    Mostrando @Model.FirstItemOnPage a @Model.LastItemOnPage de @Model.TotalItemCount registros
+                </div>
+                <div>
+                    @Html.PagedListPager(Model, page => Url.Action("Index", new { page, searchTerm = ViewBag.CurrentSearch, clientId = ViewBag.CurrentClient, status = ViewBag.CurrentStatus }), 
+                    new PagedListRenderOptions {
+                        LiElementClasses = new string[] { "page-item" },
+                        PageClasses = new string[] { "page-link" },
+                        UlElementClasses = new string[] { "pagination pagination-sm mb-0" },
+                        DisplayLinkToPreviousPage = PagedListDisplayMode.Always,
+                        DisplayLinkToNextPage = PagedListDisplayMode.Always
+                    })
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="previewModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" id="previewModalContent">
+                <div class="modal-body text-center py-5">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="mt-2 text-muted">Cargando detalles...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var previewModalEl = document.getElementById('previewModal');
+            var previewModal = new bootstrap.Modal(previewModalEl);
+            var modalContent = document.getElementById('previewModalContent');
+
+            // Delegación de eventos para que funcione incluso si recargamos la tabla con AJAX en el futuro
+            document.body.addEventListener('click', function (e) {
+                // Buscar si el clic fue en un botón de preview o dentro de él (ej. en el ícono <i>)
+                var btn = e.target.closest('.btn-preview');
+                
+                if (btn) {
+                    var dispatchId = btn.getAttribute('data-id');
+                    
+                    // Mostrar spinner mientras carga
+                    modalContent.innerHTML = `
+                        <div class="modal-body text-center py-5">
+                            <div class="spinner-border text-primary" role="status"></div>
+                            <h6 class="mt-3 text-muted">Consultando información...</h6>
+                        </div>`;
+                    previewModal.show();
+
+                    // Petición AJAX
+                    fetch('/Dispatches/Preview/' + dispatchId)
+                        .then(response => {
+                            if (!response.ok) throw new Error('Error de red');
+                            return response.text();
+                        })
+                        .then(html => {
+                            modalContent.innerHTML = html;
+                        })
+                        .catch(error => {
+                            modalContent.innerHTML = `
+                                <div class="modal-header bg-danger text-white">
+                                    <h5 class="modal-title">Error</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body text-center py-4">
+                                    <i class="bi bi-exclamation-triangle fs-1 text-danger d-block mb-2"></i>
+                                    <p>No se pudo cargar la información.</p>
+                                </div>`;
+                        });
+                }
+            });
+        });
+    </script>
+}

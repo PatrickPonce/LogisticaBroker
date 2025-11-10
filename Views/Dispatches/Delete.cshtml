@@ -1,0 +1,51 @@
+@model LogisticaBroker.Models.Dispatch
+@using LogisticaBroker.Models.Enums
+
+@{
+    ViewData["Title"] = "Borrar Despacho";
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            
+            <div class="card border-danger shadow-lg mb-3">
+                <div class="card-header bg-danger text-white fw-bold py-3">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i> CONFIRMAR ELIMINACIÓN
+                </div>
+                <div class="card-body p-4 text-center">
+                    <h3 class="text-danger mb-3">¿Está seguro de eliminar este despacho?</h3>
+                    <p class="lead text-muted">
+                        Esta acción <strong>no se puede deshacer</strong>. Se perderá toda la información asociada a este registro.
+                    </p>
+
+                    <div class="alert alert-secondary d-inline-block text-start mt-3 px-5 py-3">
+                        <dl class="row mb-0">
+                            <dt class="col-sm-5 text-uppercase">Nro. Despacho:</dt>
+                            <dd class="col-sm-7 fw-bold fs-5">@Model.DispatchNumber</dd>
+
+                            <dt class="col-sm-5 text-uppercase">Cliente:</dt>
+                            <dd class="col-sm-7">@Model.Client?.CompanyName</dd>
+
+                            <dt class="col-sm-5 text-uppercase">BL Number:</dt>
+                            <dd class="col-sm-7">@(Model.BLNumber ?? "-")</dd>
+                        </dl>
+                    </div>
+
+                    <form asp-action="Delete" class="mt-5">
+                        <input type="hidden" asp-for="Id" />
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                            <a asp-action="Index" class="btn btn-lg btn-outline-secondary px-5">
+                                Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-lg btn-danger px-5 fw-bold">
+                                <i class="bi bi-trash3-fill me-2"></i> SÍ, ELIMINAR
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>

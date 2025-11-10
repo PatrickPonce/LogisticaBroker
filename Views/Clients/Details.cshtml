@@ -1,0 +1,110 @@
+@model LogisticaBroker.Models.Client
+
+@{
+    ViewData["Title"] = "Detalles del Cliente";
+}
+
+<h1>Detalles del Cliente</h1>
+
+<div>
+    <h4>@Model.CompanyName</h4>
+    <hr />
+    <dl class="row">
+        <dt class="col-sm-3">
+            @Html.DisplayNameFor(model => model.RUC)
+        </dt>
+        <dd class="col-sm-9">
+            @Html.DisplayFor(model => model.RUC)
+        </dd>
+
+        <dt class="col-sm-3">
+            @Html.DisplayNameFor(model => model.Email)
+        </dt>
+        <dd class="col-sm-9">
+            @Html.DisplayFor(model => model.Email)
+        </dd>
+
+        <dt class="col-sm-3">
+            @Html.DisplayNameFor(model => model.Phone)
+        </dt>
+        <dd class="col-sm-9">
+            @Html.DisplayFor(model => model.Phone)
+        </dd>
+
+        <dt class="col-sm-3">
+            @Html.DisplayNameFor(model => model.ContactPerson)
+        </dt>
+        <dd class="col-sm-9">
+            @Html.DisplayFor(model => model.ContactPerson)
+        </dd>
+
+        <dt class="col-sm-3">
+            @Html.DisplayNameFor(model => model.Address)
+        </dt>
+        <dd class="col-sm-9">
+            @Html.DisplayFor(model => model.Address)
+        </dd>
+
+        <dt class="col-sm-3">
+            @Html.DisplayNameFor(model => model.Notes)
+        </dt>
+        <dd class="col-sm-9">
+            @Html.DisplayFor(model => model.Notes)
+        </dd>
+
+        <dt class="col-sm-3">
+            Fecha de Creación
+        </dt>
+        <dd class="col-sm-9">
+            @Model.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+        </dd>
+    </dl>
+</div>
+<div class="card mb-4 border-info">
+    <div class="card-header bg-info text-dark fw-bold">
+        <i class="bi bi-person-badge-fill me-2"></i>Acceso al Portal
+    </div>
+    <div class="card-body">
+        @if (string.IsNullOrEmpty(Model.UserId))
+        {
+            <p class="text-muted">Este cliente aún no tiene acceso al portal.</p>
+            <form asp-action="CreatePortalUser" asp-route-id="@Model.Id" method="post">
+                <button type="submit" class="btn btn-primary" onclick="return confirm('¿Generar usuario para este cliente?');">
+                    <i class="bi bi-key-fill me-2"></i>Generar Acceso
+                </button>
+            </form>
+        }
+        else
+            {
+                <div class="alert alert-success d-flex align-items-center justify-content-between">
+                    <div>
+                        <i class="bi bi-check-circle-fill me-2"></i>
+                        Acceso habilitado
+                    </div>
+                    <form asp-action="ResetPortalAccess" asp-route-id="@Model.Id" method="post" class="d-inline">
+                        <button type="submit" class="btn btn-sm btn-outline-danger fw-bold" 
+                                onclick="return confirm('¿ATENCIÓN: Esto invalidará la contraseña actual del cliente y generará una nueva. ¿Desea continuar?');">
+                            <i class="bi bi-arrow-clockwise me-1"></i>Regenerar Contraseña
+                        </button>
+                    </form>
+                </div>
+            }
+    </div>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show mt-3" role="alert">
+        <strong>¡Éxito!</strong> @TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger mt-3">@TempData["Error"]</div>
+}
+
+<div class="mt-4">
+    <a asp-action="Edit" asp-route-id="@Model?.Id" class="btn btn-warning">Editar</a>
+    <a asp-action="Index" class="btn btn-secondary">Volver a la lista</a>
+</div>

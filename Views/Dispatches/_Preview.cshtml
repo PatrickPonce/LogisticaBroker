@@ -1,0 +1,76 @@
+@model LogisticaBroker.Models.Dispatch
+@using LogisticaBroker.Models.Enums
+
+@{
+    var statusBadge = Model.Status switch {
+        DispatchStatus.Completed => "bg-success",
+        DispatchStatus.Released => "bg-info text-dark",
+        DispatchStatus.Pending => "bg-secondary",
+        _ => "bg-primary"
+    };
+}
+
+<div class="modal-header bg-light">
+    <h5 class="modal-title">
+        <i class="bi bi-box-seam me-2 text-primary"></i>@Model.DispatchNumber
+        <span class="badge @statusBadge ms-2" style="font-size: 0.7em">@Model.Status</span>
+    </h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+</div>
+<div class="modal-body">
+    <div class="row g-3">
+        <div class="col-md-6">
+            <h6 class="fw-bold text-muted mb-2">Información General</h6>
+            <ul class="list-group list-group-flush small">
+                <li class="list-group-item d-flex justify-content-between px-0">
+                    <span class="text-muted">Cliente:</span>
+                    <span class="fw-bold text-end">@Model.Client?.CompanyName</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between px-0">
+                    <span class="text-muted">RUC:</span>
+                    <span>@Model.Client?.RUC</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between px-0">
+                    <span class="text-muted">BL Number:</span>
+                    <span class="fw-bold">@(Model.BLNumber ?? "-")</span>
+                </li>
+            </ul>
+        </div>
+        <div class="col-md-6">
+            <h6 class="fw-bold text-muted mb-2">Logística</h6>
+            <ul class="list-group list-group-flush small">
+                <li class="list-group-item d-flex justify-content-between px-0">
+                    <span class="text-muted">Naviera:</span>
+                    <span>@(Model.ShippingLine ?? "-")</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between px-0">
+                    <span class="text-muted">Contenedor:</span>
+                    <span class="font-monospace bg-light px-1">@(Model.ContainerNumber ?? "-")</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between px-0">
+                    <span class="text-muted">Puerto:</span>
+                    <span>@(Model.Port ?? "-")</span>
+                </li>
+            </ul>
+        </div>
+        <div class="col-12 mt-3">
+             <h6 class="fw-bold text-muted mb-2">Valores</h6>
+             <div class="bg-light p-2 rounded d-flex justify-content-around small">
+                 <div>
+                     <span class="text-muted me-2">Peso:</span>
+                     <strong>@(Model.Weight?.ToString("N2") ?? "-") KG</strong>
+                 </div>
+                 <div class="border-start mx-2"></div>
+                 <div>
+                     <span class="text-muted me-2">Valor:</span>
+                     <strong class="text-success">$ @(Model.Value?.ToString("N2") ?? "-")</strong>
+                 </div>
+             </div>
+        </div>
+    </div>
+</div>
+<div class="modal-footer bg-light py-2">
+    <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-primary btn-sm px-4">
+        Ver Expediente Completo <i class="bi bi-arrow-right ms-1"></i>
+    </a>
+</div>

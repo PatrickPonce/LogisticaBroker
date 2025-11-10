@@ -1,0 +1,121 @@
+@model LogisticaBroker.Models.Dispatch
+@using LogisticaBroker.Models.Enums
+
+@{
+    ViewData["Title"] = "Editar Despacho";
+}
+
+<h1>Editar Despacho: @Model.DispatchNumber</h1>
+<hr />
+
+<form asp-action="Edit">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <input type="hidden" asp-for="Id" />
+    <input type="hidden" asp-for="CreatedAt" />
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header bg-warning text-dark fw-bold">Información Principal</div>
+                <div class="card-body">
+                    <div class="form-group mb-3">
+                        <label asp-for="ClientId" class="control-label fw-bold">Cliente</label>
+                        <select asp-for="ClientId" class="form-control form-select" asp-items="ViewBag.ClientId"></select>
+                        <span asp-validation-for="ClientId" class="text-danger"></span>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 form-group mb-3">
+                            <label asp-for="DispatchNumber" class="control-label fw-bold"></label>
+                            <input asp-for="DispatchNumber" class="form-control" />
+                            <span asp-validation-for="DispatchNumber" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6 form-group mb-3">
+                            <label asp-for="BLNumber" class="control-label"></label>
+                            <input asp-for="BLNumber" class="form-control" />
+                            <span asp-validation-for="BLNumber" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+             <div class="card mb-4">
+                <div class="card-header">Estado y Canal</div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 form-group mb-3">
+                            <label asp-for="Status" class="control-label"></label>
+                            <select asp-for="Status" class="form-select" asp-items="Html.GetEnumSelectList<DispatchStatus>()"></select>
+                            <span asp-validation-for="Status" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6 form-group mb-3">
+                            <label asp-for="Channel" class="control-label"></label>
+                            <select asp-for="Channel" class="form-select" asp-items="Html.GetEnumSelectList<DispatchChannel>()"></select>
+                            <span asp-validation-for="Channel" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">Detalles de Logística</div>
+                <div class="card-body">
+                     <div class="row">
+                        <div class="col-md-6 form-group mb-3">
+                            <label asp-for="Supplier" class="control-label"></label>
+                            <input asp-for="Supplier" class="form-control" />
+                            <span asp-validation-for="Supplier" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6 form-group mb-3">
+                            <label asp-for="ShippingLine" class="control-label"></label>
+                            <input asp-for="ShippingLine" class="form-control" />
+                            <span asp-validation-for="ShippingLine" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 form-group mb-3">
+                            <label asp-for="ArrivalDate" class="control-label"></label>
+                            <input asp-for="ArrivalDate" class="form-control" />
+                            <span asp-validation-for="ArrivalDate" class="text-danger"></span>
+                        </div>
+                         <div class="col-md-6 form-group mb-3">
+                            <label asp-for="Port" class="control-label"></label>
+                            <input asp-for="Port" class="form-control" />
+                            <span asp-validation-for="Port" class="text-danger"></span>
+                        </div>
+                    </div>
+                     <div class="form-group mb-3">
+                        <label asp-for="ContainerNumber" class="control-label"></label>
+                        <input asp-for="ContainerNumber" class="form-control" />
+                        <span asp-validation-for="ContainerNumber" class="text-danger"></span>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 form-group mb-3">
+                            <label asp-for="Weight" class="control-label"></label>
+                            <input asp-for="Weight" class="form-control" />
+                            <span asp-validation-for="Weight" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6 form-group mb-3">
+                            <label asp-for="Value" class="control-label"></label>
+                             <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input asp-for="Value" class="form-control" />
+                            </div>
+                            <span asp-validation-for="Value" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-group mt-3">
+        <input type="submit" value="Guardar Cambios" class="btn btn-primary btn-lg" />
+        <a asp-action="Index" class="btn btn-secondary btn-lg ms-2">Cancelar</a>
+    </div>
+</form>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

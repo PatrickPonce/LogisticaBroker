@@ -1,0 +1,239 @@
+@model LogisticaBroker.Models.Dispatch
+@using LogisticaBroker.Models.Enums
+@{ 
+    ViewData["Title"] = "Seguimiento " + Model.DispatchNumber;
+    
+    // LÓGICA PARA LA BARRA DE PROGRESO DINÁMICA
+    var (progressPercentage, progressClass, progressLabel) = Model.Status switch
+    {
+        DispatchStatus.Pending => (10, "bg-secondary", "Inicio / Pendiente"),
+        DispatchStatus.Documentation => (30, "bg-info text-dark", "Documentación"),
+        DispatchStatus.InTransit => (50, "bg-primary", "En Tránsito"),
+        DispatchStatus.Arrived => (70, "bg-primary", "Arribado a Puerto"),
+        DispatchStatus.Customs => (85, "bg-warning text-dark", "En Trámite Aduanero"),
+        DispatchStatus.Released => (95, "bg-success", "Liberado / Por Entregar"),
+        DispatchStatus.Completed => (100, "bg-success", "¡Completado!"),
+        _ => (0, "bg-danger", "Estado Desconocido")
+    };
+}
+
+<div class="container py-4">
+    <a asp-action="Index" class="text-decoration-none mb-3 d-inline-block">
+        <i class="bi bi-arrow-left me-1"></i> Volver a mis despachos
+    </a>
+
+    <div class="card shadow-lg border-primary border-top border-4 mb-5">
+        <div class="card-body p-5 text-center">
+            <h2 class="fw-bold text-primary">@Model.DispatchNumber</h2>
+            <p class="lead text-muted mb-4">Estado Actual: <span class="badge bg-primary fs-6 align-middle ms-2">@Model.Status</span></p>
+             
+            <div class="progress" style="height: 35px; font-size: 0.9rem;">
+                <div class="progress-bar progress-bar-striped progress-bar-animated @progressClass fw-bold" 
+                    role="progressbar" 
+                    style="width: @progressPercentage%; transition: width 1.5s ease-in-out;"
+                    aria-valuenow="@progressPercentage" 
+                    aria-valuemin="0" 
+                    aria-valuemax="100">
+                    @progressLabel (@progressPercentage%)
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6 mb-4">
+             <h4 class="mb-3 text-secondary"><i class="bi bi-clock-history me-2"></i>Bitácora de Eventos</h4>
+             <div class="list-group shadow-sm">
+                @foreach(var entry in Model.Timeline.OrderByDescending(t => t.ChangedAt))
+                {
+                    <div class="list-group-item list-group-item-action flex-column align-items-start p-3">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h5 class="mb-1 text-primary">@entry.Status</h5>
+                            <small class="text-muted">@entry.ChangedAt.ToLocalTime().ToString("g")</small>
+                        </div>
+                        
+                        <button class="btn btn-sm btn-link text-decoration-none ps-0 mt-2" 
+                                onclick='showTimelineDetails(@Html.Raw(Json.Serialize(new {
+                                    status = entry.Status.ToString(),
+                                    date = entry.ChangedAt.ToLocalTime().ToString("g"),
+                                    notes = entry.Notes,
+                                    changedBy = entry.ChangedBy?.FullName ?? "Sistema",
+                                    documents = entry.Documents.Select(d => new { d.FileName, d.Id, d.DocType })
+                                })))'>
+                            <i class="bi bi-eye me-1"></i>Ver detalles y adjuntos
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <h4 class="mb-3 text-secondary"><i class="bi bi-folder2-open me-2"></i>Mis Documentos</h4>
+             @if(Model.Documents.Any()) {
+                <div class="list-group shadow-sm">
+                    @foreach(var doc in Model.Documents) {
+                        <div class="list-group-item d-flex justify-content-between align-items-center p-3">
+                            <div>
+                                <i class="bi bi-file-earmark-pdf text-danger me-2 fs-4 align-middle"></i>
+                                <span class="fw-bold">@doc.DocType</span>
+                                <br><small class="text-muted ms-4">@doc.FileName</small>
+                            </div>
+                             <a asp-controller="Documents" asp-action="Download" asp-route-id="@doc.Id" class="btn btn-sm btn-outline-primary">
+                                 <i class="bi bi-download"></i>
+                             </a>
+                        </div>
+                    }
+                </div>
+             } else {
+                 <div class="alert alert-light border text-center">No hay documentos disponibles para descarga aún.</div>
+             }
+        </div>
+    </div>
+    
+    @using LogisticaBroker.Models.Enums
+    <div class="row mt-4">
+            <div class="col-12">
+                <div class="card shadow-sm border-success border-top border-4">
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0 fw-bold text-success">
+                            <i class="bi bi-cash-stack me-2"></i>Estado de Pagos y Liquidación
+                        </h5>
+                    </div>
+                    <div class="card-body p-0">
+                        @if (Model.Payments != null && Model.Payments.Any())
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0 align-middle">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Concepto</th>
+                                            <th>Monto (USD)</th>
+                                            <th>Estado</th>
+                                            <th>Vencimiento</th>
+                                            <th>Pagado El</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var pay in Model.Payments.OrderBy(p => p.DueDate))
+                                        {
+                                            var badgeClass = pay.Status switch {
+                                                PaymentStatus.Paid => "bg-success",
+                                                PaymentStatus.Pending => "bg-warning text-dark",
+                                                _ => "bg-danger"
+                                            };
+                                            <tr>
+                                                <td>
+                                                    <span class="fw-bold">@Html.DisplayFor(m => pay.PaymentType)</span>
+                                                    @if (!string.IsNullOrEmpty(pay.Notes)) { 
+                                                        <br/><small class="text-muted fst-italic">@pay.Notes</small> 
+                                                    }
+                                                </td>
+                                                <td class="font-monospace">$ @pay.Amount.ToString("N2")</td>
+                                                <td><span class="badge @badgeClass">@Html.DisplayFor(m => pay.Status)</span></td>
+                                                <td>@(pay.DueDate?.ToLocalTime().ToString("dd/MM/yyyy") ?? "-")</td>
+                                                <td>@(pay.PaidDate?.ToLocalTime().ToString("dd/MM/yyyy") ?? "-")</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                    <tfoot class="table-light fw-bold">
+                                        <tr>
+                                            <td class="text-end">TOTAL:</td>
+                                            <td class="font-monospace text-success">$ @Model.Payments.Sum(p => p.Amount).ToString("N2")</td>
+                                            <td colspan="3"></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="text-center py-5 text-muted opacity-75">
+                                <i class="bi bi-wallet2 fs-1 d-block mb-2"></i>
+                                <p>No hay información de pagos registrada para este despacho.</p>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="timelineModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-info-circle me-2"></i>Detalle del Movimiento
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <h4 class="text-primary fw-bold mb-3" id="tmStatus">-</h4>
+                
+                <dl class="row mb-4">
+                    <dt class="col-sm-4 text-muted">Fecha/Hora:</dt>
+                    <dd class="col-sm-8 fw-bold" id="tmDate">-</dd>
+                    
+                    <dt class="col-sm-4 text-muted">Realizado por:</dt>
+                    <dd class="col-sm-8" id="tmBy">-</dd>
+                </dl>
+
+                <div class="mb-4">
+                    <h6 class="fw-bold text-secondary border-bottom pb-2"><i class="bi bi-card-text me-2"></i>Notas/Observaciones</h6>
+                    <div class="bg-light p-3 rounded fst-italic text-muted" id="tmNotes">
+                        Sin notas adicionales.
+                    </div>
+                </div>
+
+                <div>
+                    <h6 class="fw-bold text-secondary border-bottom pb-2"><i class="bi bi-paperclip me-2"></i>Documentos de Sustento</h6>
+                    <ul class="list-group list-group-flush" id="tmDocs">
+                        </ul>
+                </div>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        var timelineModal;
+        document.addEventListener('DOMContentLoaded', function() {
+             timelineModal = new bootstrap.Modal(document.getElementById('timelineModal'));
+        });
+
+        function showTimelineDetails(data) {
+            document.getElementById('tmStatus').textContent = data.status;
+            document.getElementById('tmDate').textContent = data.date;
+            document.getElementById('tmBy').textContent = data.changedBy;
+            document.getElementById('tmNotes').textContent = data.notes || "Sin notas adicionales.";
+
+            var docsList = document.getElementById('tmDocs');
+            docsList.innerHTML = ''; // Limpiar lista anterior
+
+            if (data.documents && data.documents.length > 0) {
+                data.documents.forEach(doc => {
+                    var li = document.createElement('li');
+                    li.className = 'list-group-item d-flex justify-content-between align-items-center px-0 py-2';
+                    li.innerHTML = `
+                        <div>
+                            <i class="bi bi-file-earmark-text text-primary me-2"></i>
+                            <span>${doc.fileName}</span>
+                        </div>
+                        <a href="/Documents/Download/${doc.id}" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-download"></i>
+                        </a>
+                    `;
+                    docsList.appendChild(li);
+                });
+            } else {
+                docsList.innerHTML = '<li class="list-group-item text-muted fst-italic px-0 py-3">No hay documentos vinculados a este movimiento.</li>';
+            }
+
+            timelineModal.show();
+        }
+    </script>
+}

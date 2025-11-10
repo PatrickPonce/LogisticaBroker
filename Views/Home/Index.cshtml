@@ -1,0 +1,463 @@
+﻿@model LogisticaBroker.Models.ViewModels.DashboardViewModel
+@using LogisticaBroker.Models.Enums
+
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800 fw-bold">
+                <i class="bi bi-speedometer2 me-2"></i>Panel de Control
+            </h1>
+            <p class="text-muted">Resumen operativo en tiempo real</p>
+        </div>
+        <div>
+            <a asp-controller="Dispatches" asp-action="Create" class="btn btn-primary shadow-sm">
+                <i class="bi bi-plus-lg me-2"></i>Nuevo Despacho
+            </a>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2 border-0 border-start border-4 border-primary">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1 fw-bold">
+                                Despachos Activos</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800 fw-bold fs-2">@Model.ActiveDispatches</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-truck fs-1 text-gray-300 text-primary opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2 border-0 border-start border-4 border-warning">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1 fw-bold">
+                                En Aduana</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800 fw-bold fs-2">@Model.DispatchesInCustoms</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-building-exclamation fs-1 text-warning opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2 border-0 border-start border-4 border-success">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1 fw-bold">
+                                Completados (Histórico)</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800 fw-bold fs-2">@Model.CompletedDispatches</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-check-circle-fill fs-1 text-success opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2 border-0 border-start border-4 border-info">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1 fw-bold">
+                                Total Clientes</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800 fw-bold fs-2">@Model.TotalClients</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-people-fill fs-1 text-info opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-lg-8 mb-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary fw-bold">
+                        <i class="bi bi-calendar-week me-2"></i>Calendario Operativo
+                    </h6>
+                    <small class="text-muted">Haz clic en un día para agendar</small>
+                </div>
+                <div class="card-body p-3">
+                    <div id="calendar" style="min-height: 500px;"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4 mb-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white py-3 fw-bold">
+                    <i class="bi bi-list-check me-2 text-success"></i>Agenda Pendiente
+                </div>
+                <div class="card-body bg-light">
+                    <div class="input-group mb-3">
+                        <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+                        <input type="text" id="taskSearch" class="form-control border-start-0 ps-0" placeholder="Buscar por despacho o título...">
+                    </div>
+
+                    <div id="taskList" class="list-group shadow-sm" style="max-height: 450px; overflow-y:auto;">
+                        <div class="text-center py-4 text-muted">
+                            <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                            Cargando tareas...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="eventModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title"><i class="bi bi-calendar-plus me-2"></i>Agendar Tarea/Evento</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="eventForm">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Título *</label>
+                            <input type="text" id="eventTitle" class="form-control" required placeholder="Ej: Inspección física" />
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Inicio *</label>
+                                <input type="datetime-local" id="eventStart" class="form-control" required />
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Fin</label>
+                                <input type="datetime-local" id="eventEnd" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                             <label class="form-label fw-bold">Despacho Relacionado</label>
+                             <select id="eventDispatch" class="form-select">
+                                 <option value="">-- Ninguno / General --</option>
+                                 </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Color</label>
+                            <div class="d-flex gap-2">
+                                <input type="color" id="eventColor" class="form-control form-control-color" value="#3788d8" title="Elige un color">
+                                <span class="small text-muted align-self-center">Categoriza visualmente tus tareas</span>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Descripción</label>
+                            <textarea id="eventDescription" class="form-control" rows="2"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="saveEventBtn">Guardar Evento</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="modal fade" id="taskDetailsModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold" id="detailTitle">Título de la Tarea</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4 text-muted">Inicio</dt>
+                        <dd class="col-sm-8 fw-bold" id="detailStart">-</dd>
+
+                        <dt class="col-sm-4 text-muted">Fin</dt>
+                        <dd class="col-sm-8" id="detailEnd">-</dd>
+
+                        <dt class="col-sm-4 text-muted">Despacho</dt>
+                        <dd class="col-sm-8" id="detailDispatch">-</dd>
+
+                        <dt class="col-sm-12 mt-3 text-muted">Descripción</dt>
+                        <dd class="col-sm-12 bg-light p-3 rounded border mt-1 fst-italic" id="detailDescription">
+                            Sin descripción.
+                        </dd>
+                    </dl>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-success" id="btnCompleteFromModal">
+                        <i class="bi bi-check2-square me-2"></i>Marcar como Hecho
+                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="row">
+        <div class="col-lg-12 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center bg-white">
+                    <h6 class="m-0 font-weight-bold text-primary fw-bold">
+                        <i class="bi bi-clock-history me-2"></i>Actividad Reciente
+                    </h6>
+                    <a asp-controller="Dispatches" asp-action="Index" class="btn btn-sm btn-outline-primary">Ver Todos</a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Despacho</th>
+                                    <th>Cliente</th>
+                                    <th>Estado</th>
+                                    <th>Última Actualización</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (Model.RecentDispatches.Any())
+                                {
+                                    @foreach (var item in Model.RecentDispatches)
+                                    {
+                                        var statusBadge = item.Status switch {
+                                            DispatchStatus.Completed => "bg-success",
+                                            DispatchStatus.Released => "bg-info text-dark",
+                                            DispatchStatus.Customs => "bg-warning text-dark",
+                                            _ => "bg-secondary"
+                                        };
+
+                                        <tr>
+                                            <td class="fw-bold text-primary">
+                                                <a asp-controller="Dispatches" asp-action="Details" asp-route-id="@item.Id" class="text-decoration-none">
+                                                    @item.DispatchNumber
+                                                </a>
+                                            </td>
+                                            <td>@item.Client?.CompanyName</td>
+                                            <td><span class="badge @statusBadge">@item.Status</span></td>
+                                            <td class="text-muted small">@item.UpdatedAt.ToLocalTime().ToString("g")</td>
+                                            <td class="text-end pe-3">
+                                                <a asp-controller="Dispatches" asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-light">
+                                                    <i class="bi bi-chevron-right"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td colspan="5" class="text-center py-4 text-muted">
+                                            No hay actividad reciente para mostrar.
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // --- INICIALIZACIÓN DE COMPONENTES ---
+            var calendarEl = document.getElementById('calendar');
+            var eventModal = new bootstrap.Modal(document.getElementById('eventModal'));
+            var taskDetailsModal = new bootstrap.Modal(document.getElementById('taskDetailsModal')); // NUEVO
+
+            // --- CALENDARIO ---
+            var calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                locale: 'es',
+                headerToolbar: { left: 'prev,next', center: 'title', right: 'today' },
+                height: 'auto',
+                events: '/Calendar/GetEvents',
+                dateClick: function(info) { openCreateModal(info.dateStr); },
+                eventClick: function(info) {
+                    // Al hacer clic en el calendario, usamos el nuevo modal de detalles también
+                    showTaskDetails({
+                        title: info.event.title,
+                        start: info.event.startStr,
+                        end: info.event.endStr,
+                        description: info.event.extendedProps.description,
+                        dispatchNumber: info.event.extendedProps.dispatchNumber,
+                        id: info.event.id
+                    });
+                }
+            });
+            calendar.render();
+
+            // --- AGENDA LATERAL ---
+            loadTasks();
+            let searchTimeout;
+            document.getElementById('taskSearch').addEventListener('input', function(e) {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => { loadTasks(e.target.value); }, 300);
+            });
+
+            function loadTasks(filter = '') {
+                const taskList = document.getElementById('taskList');
+                taskList.style.opacity = '0.5';
+                
+                fetch('/Calendar/GetUpcomingTasks?filter=' + encodeURIComponent(filter))
+                    .then(r => r.json())
+                    .then(data => {
+                        taskList.innerHTML = '';
+                        taskList.style.opacity = '1';
+
+                        if (data.length === 0) {
+                            taskList.innerHTML = `<div class="text-center py-4 text-muted"><i class="bi bi-clipboard-check fs-1 d-block mb-2 opacity-25"></i>No hay tareas pendientes.</div>`;
+                            return;
+                        }
+
+                        data.forEach(task => {
+                            const taskDate = new Date(task.start);
+                            const formattedDate = taskDate.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute:'2-digit' });
+                            const item = document.createElement('div');
+                            item.className = 'list-group-item list-group-item-action p-3 border-start border-4 mb-2 shadow-sm';
+                            item.style.borderLeftColor = task.color + '!important';
+
+                            // Guardamos los datos completos en un atributo data- para usarlos luego
+                            item.dataset.task = JSON.stringify(task);
+
+                            item.innerHTML = `
+                                <div class="d-flex w-100 justify-content-between align-items-start">
+                                    <div class="form-check flex-grow-1">
+                                        <input class="form-check-input mt-1" type="checkbox" onchange="toggleTaskComplete(${task.id})" style="cursor: pointer;">
+                                        <div class="ms-2">
+                                            <label class="form-check-label fw-bold ${task.isOverdue ? 'text-danger' : 'text-dark'}">${task.title}</label>
+                                            <div class="text-muted small"><i class="bi bi-clock me-1"></i>${formattedDate}</div>
+                                            ${task.dispatchNumber ? `<span class="badge bg-light text-dark border mt-1"><i class="bi bi-box-seam me-1"></i>${task.dispatchNumber}</span>` : ''}
+                                        </div>
+                                    </div>
+                                    <button class="btn btn-sm btn-outline-secondary border-0" onclick='openDetailFromButton(this)' title="Ver detalles">
+                                        <i class="bi bi-eye-fill"></i>
+                                    </button>
+                                </div>
+                            `;
+                            taskList.appendChild(item);
+                        });
+                    });
+            }
+
+            // --- NUEVO: FUNCIÓN PARA ABRIR DETALLES ---
+            window.openDetailFromButton = function(buttonEl) {
+                // Recuperamos los datos guardados en el atributo data-task del padre
+                var taskData = JSON.parse(buttonEl.closest('.list-group-item').dataset.task);
+                showTaskDetails(taskData);
+            };
+
+            function showTaskDetails(task) {
+                document.getElementById('detailTitle').innerText = task.title;
+                document.getElementById('detailStart').innerText = new Date(task.start).toLocaleString('es-ES');
+                document.getElementById('detailEnd').innerText = task.end ? new Date(task.end).toLocaleString('es-ES') : 'N/A';
+                document.getElementById('detailDispatch').innerText = task.dispatchNumber || 'Ninguno';
+                document.getElementById('detailDescription').innerText = task.description || 'Sin descripción adicional.';
+                
+                // Configurar el botón de "Completar" del modal
+                var btnComplete = document.getElementById('btnCompleteFromModal');
+                btnComplete.onclick = function() {
+                    toggleTaskComplete(task.id);
+                    taskDetailsModal.hide();
+                };
+
+                taskDetailsModal.show();
+            }
+
+            // --- FUNCIONES GLOBALES Y MODAL DE CREACIÓN (Igual que antes) ---
+            window.toggleTaskComplete = function(id) {
+                fetch('/Calendar/ToggleComplete?id=' + id, { method: 'POST' })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.success) {
+                            loadTasks(document.getElementById('taskSearch').value);
+                            calendar.refetchEvents();
+                        }
+                    });
+            };
+
+            // ... (Mantén aquí las funciones openCreateModal, loadActiveDispatches y el listener de saveEventBtn exactamente como estaban en la Parte 15) ...
+            // Para ahorrar espacio no las repito todas, pero ASEGÚRATE DE QUE ESTÉN AQUÍ.
+            
+             function openCreateModal(dateStr) {
+                document.getElementById('eventStart').value = dateStr + 'T09:00';
+                document.getElementById('eventEnd').value = dateStr + 'T10:00';
+                document.getElementById('eventTitle').value = '';
+                document.getElementById('eventDescription').value = '';
+                loadActiveDispatches();
+                eventModal.show();
+            }
+            var dispatchesLoaded = false;
+            function loadActiveDispatches() {
+                 if (dispatchesLoaded) return;
+                 fetch('/Calendar/GetActiveDispatches')
+                    .then(r => r.json())
+                    .then(data => {
+                        var select = document.getElementById('eventDispatch');
+                        while (select.options.length > 1) { select.remove(1); }
+                        data.forEach(d => {
+                            var option = document.createElement('option');
+                            option.value = d.id;
+                            option.text = d.text;
+                            select.appendChild(option);
+                        });
+                        dispatchesLoaded = true;
+                    });
+            }
+            document.getElementById('saveEventBtn').addEventListener('click', function() {
+                 // ... tu lógica de guardar existente ...
+                 // Recuerda que al final del fetch de guardar debes llamar a:
+                 // calendar.refetchEvents();
+                 // loadTasks(); 
+                 // eventModal.hide();
+                 // Copia tu listener anterior completo aquí.
+                  var eventData = {
+                    Title: document.getElementById('eventTitle').value,
+                    Start: document.getElementById('eventStart').value,
+                    End: document.getElementById('eventEnd').value || null,
+                    DispatchId: document.getElementById('eventDispatch').value || null,
+                    Color: document.getElementById('eventColor').value,
+                    Description: document.getElementById('eventDescription').value
+                };
+
+                if (!eventData.Title || !eventData.Start) {
+                    alert('Por favor completa el título y la fecha de inicio.');
+                    return;
+                }
+                
+                this.disabled = true; 
+                fetch('/Calendar/Create', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(eventData)
+                }).then(r => r.json()).then(data => {
+                    if (data.success) {
+                        calendar.refetchEvents();
+                        loadTasks();
+                        eventModal.hide();
+                    } else { alert('Error: ' + data.message); }
+                }).finally(() => { this.disabled = false; });
+            });
+        });
+    </script>
+}
