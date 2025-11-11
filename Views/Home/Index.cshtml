@@ -108,21 +108,44 @@
         <div class="col-lg-4 mb-4">
             <div class="card shadow-sm border-0 h-100">
                 <div class="card-header bg-white py-3 fw-bold">
-                    <i class="bi bi-list-check me-2 text-success"></i>Agenda Pendiente
+                    <i class="bi bi-list-check me-2 text-success"></i>Agenda de Tareas
                 </div>
-                <div class="card-body bg-light">
+                
+                <div class="card-body bg-light pb-0">
                     <div class="input-group mb-3">
                         <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
-                        <input type="text" id="taskSearch" class="form-control border-start-0 ps-0" placeholder="Buscar por despacho o título...">
-                    </div>
-
-                    <div id="taskList" class="list-group shadow-sm" style="max-height: 450px; overflow-y:auto;">
-                        <div class="text-center py-4 text-muted">
-                            <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
-                            Cargando tareas...
-                        </div>
+                        <input type="text" id="taskSearch" class="form-control border-start-0 ps-0" placeholder="Buscar en ambas listas...">
                     </div>
                 </div>
+
+                <ul class="nav nav-tabs nav-fill" id="agendaTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active fw-bold" id="pending-tab" data-bs-toggle="tab" data-bs-target="#pending-panel" type="button" role="tab">
+                            Pendientes <span class="badge bg-warning text-dark ms-1" id="pending-count">0</span>
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link fw-bold" id="completed-tab" data-bs-toggle="tab" data-bs-target="#completed-panel" type="button" role="tab">
+                            Completadas <span class="badge bg-success ms-1" id="completed-count">0</span>
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content" id="agendaTabsContent">
+                    <div class="tab-pane fade show active" id="pending-panel" role="tabpanel">
+                        <div id="taskListPending" class="list-group list-group-flush" style="max-height: 450px; overflow-y:auto;">
+                            <div class="text-center py-4 text-muted">
+                                <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                                Cargando...
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="completed-panel" role="tabpanel">
+                        <div id="taskListCompleted" class="list-group list-group-flush" style="max-height: 450px; overflow-y:auto;">
+                            </div>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>
@@ -251,7 +274,7 @@
                                                 </a>
                                             </td>
                                             <td>@item.Client?.CompanyName</td>
-                                            <td><span class="badge @statusBadge">@item.Status</span></td>
+                                            <td><span class="badge @statusBadge">@Html.DisplayFor(modelItem => item.Status)</span></td>
                                             <td class="text-muted small">@item.UpdatedAt.ToLocalTime().ToString("g")</td>
                                             <td class="text-end pe-3">
                                                 <a asp-controller="Dispatches" asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-light">
@@ -283,7 +306,7 @@
             // --- INICIALIZACIÓN DE COMPONENTES ---
             var calendarEl = document.getElementById('calendar');
             var eventModal = new bootstrap.Modal(document.getElementById('eventModal'));
-            var taskDetailsModal = new bootstrap.Modal(document.getElementById('taskDetailsModal')); // NUEVO
+            var taskDetailsModal = new bootstrap.Modal(document.getElementById('taskDetailsModal'));
 
             // --- CALENDARIO ---
             var calendar = new FullCalendar.Calendar(calendarEl, {
@@ -291,10 +314,9 @@
                 locale: 'es',
                 headerToolbar: { left: 'prev,next', center: 'title', right: 'today' },
                 height: 'auto',
-                events: '/Calendar/GetEvents',
+                events: '/Calendar/GetEvents', // Endpoint que trae PENDIENTES
                 dateClick: function(info) { openCreateModal(info.dateStr); },
                 eventClick: function(info) {
-                    // Al hacer clic en el calendario, usamos el nuevo modal de detalles también
                     showTaskDetails({
                         title: info.event.title,
                         start: info.event.startStr,
@@ -307,23 +329,43 @@
             });
             calendar.render();
 
-            // --- AGENDA LATERAL ---
-            loadTasks();
+            // ==========================================
+            // === LÓGICA DE AGENDA LATERAL (Tabs) ===
+            // ==========================================
+            const searchInput = document.getElementById('taskSearch');
+
+            // Cargar datos de la pestaña activa al inicio
+            loadPendingTasks();
+
+            // Escuchar el buscador
             let searchTimeout;
-            document.getElementById('taskSearch').addEventListener('input', function(e) {
+            searchInput.addEventListener('input', function(e) {
                 clearTimeout(searchTimeout);
-                searchTimeout = setTimeout(() => { loadTasks(e.target.value); }, 300);
+                searchTimeout = setTimeout(() => {
+                    const filter = e.target.value;
+                    // Recargar ambas listas para que los contadores estén correctos
+                    loadPendingTasks(filter);
+                    loadCompletedTasks(filter);
+                }, 300);
             });
 
-            function loadTasks(filter = '') {
-                const taskList = document.getElementById('taskList');
-                taskList.style.opacity = '0.5';
+            // Escuchar clics en las pestañas para cargar su contenido
+            document.getElementById('pending-tab').addEventListener('click', () => loadPendingTasks(searchInput.value));
+            document.getElementById('completed-tab').addEventListener('click', () => loadCompletedTasks(searchInput.value));
+
+
+            // --- FUNCIÓN PARA CARGAR TAREAS PENDIENTES ---
+            function loadPendingTasks(filter = '') {
+                const taskList = document.getElementById('taskListPending');
+                if (!taskList) return; // Si la vista no está activa, no hacer nada
+                
+                taskList.innerHTML = '<div class="text-center py-4 text-muted"><div class="spinner-border spinner-border-sm text-primary" role="status"></div></div>';
                 
                 fetch('/Calendar/GetUpcomingTasks?filter=' + encodeURIComponent(filter))
                     .then(r => r.json())
                     .then(data => {
                         taskList.innerHTML = '';
-                        taskList.style.opacity = '1';
+                        document.getElementById('pending-count').innerText = data.length;
 
                         if (data.length === 0) {
                             taskList.innerHTML = `<div class="text-center py-4 text-muted"><i class="bi bi-clipboard-check fs-1 d-block mb-2 opacity-25"></i>No hay tareas pendientes.</div>`;
@@ -336,8 +378,6 @@
                             const item = document.createElement('div');
                             item.className = 'list-group-item list-group-item-action p-3 border-start border-4 mb-2 shadow-sm';
                             item.style.borderLeftColor = task.color + '!important';
-
-                            // Guardamos los datos completos en un atributo data- para usarlos luego
                             item.dataset.task = JSON.stringify(task);
 
                             item.innerHTML = `
@@ -347,26 +387,98 @@
                                         <div class="ms-2">
                                             <label class="form-check-label fw-bold ${task.isOverdue ? 'text-danger' : 'text-dark'}">${task.title}</label>
                                             <div class="text-muted small"><i class="bi bi-clock me-1"></i>${formattedDate}</div>
-                                            ${task.dispatchNumber ? `<span class="badge bg-light text-dark border mt-1"><i class="bi bi-box-seam me-1"></i>${task.dispatchNumber}</span>` : ''}
-                                        </div>
+                                            
+                                            ${task.dispatchId ? 
+                                            `<a href="/Dispatches/Details/${task.dispatchId}" 
+                                                target="_blank" 
+                                                class="badge bg-light text-primary border mt-1 text-decoration-none">
+                                                <i class="bi bi-box-seam me-1"></i>${task.dispatchNumber}
+                                            </a>` 
+                                            : ''}
+                                            </div>
                                     </div>
                                     <button class="btn btn-sm btn-outline-secondary border-0" onclick='openDetailFromButton(this)' title="Ver detalles">
                                         <i class="bi bi-eye-fill"></i>
                                     </button>
-                                </div>
-                            `;
+                                </div>`;
                             taskList.appendChild(item);
                         });
                     });
             }
 
-            // --- NUEVO: FUNCIÓN PARA ABRIR DETALLES ---
+            // --- FUNCIÓN PARA CARGAR TAREAS COMPLETADAS ---
+            function loadCompletedTasks(filter = '') {
+                const taskList = document.getElementById('taskListCompleted');
+                if (!taskList) return;
+                
+                taskList.innerHTML = '<div class="text-center py-4 text-muted"><div class="spinner-border spinner-border-sm text-primary" role="status"></div></div>';
+                
+                fetch('/Calendar/GetCompletedTasks?filter=' + encodeURIComponent(filter))
+                    .then(r => r.json())
+                    .then(data => {
+                        taskList.innerHTML = '';
+                        document.getElementById('completed-count').innerText = data.length;
+
+                        if (data.length === 0) {
+                            taskList.innerHTML = `<div class="text-center py-4 text-muted"><i class="bi bi-check-all fs-1 d-block mb-2 opacity-25"></i>No hay tareas completadas (últimos 10).</div>`;
+                            return;
+                        }
+
+                        data.forEach(task => {
+                            const taskDate = new Date(task.start);
+                            const formattedDate = taskDate.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+                            const item = document.createElement('div');
+                            item.className = 'list-group-item p-3 bg-light text-muted';
+                            item.dataset.task = JSON.stringify(task); // Sigue pudiendo ver detalles
+
+                            item.innerHTML = `
+                                <div class="d-flex w-100 justify-content-between align-items-start">
+                                    <div class="form-check flex-grow-1">
+                                        <input class="form-check-input mt-1" type="checkbox" onchange="toggleTaskComplete(${task.id})" checked style="cursor: pointer;">
+                                        <div class="ms-2">
+                                            <label class="form-check-label text-decoration-line-through">${task.title}</label>
+                                            <div class="small"><i class="bi bi-calendar-check me-1"></i>${formattedDate}</div>
+
+                                            ${task.dispatchId ? 
+                                            `<a href="/Dispatches/Details/${task.dispatchId}" 
+                                                target="_blank" 
+                                                class="badge bg-white text-dark border mt-1 text-decoration-none">
+                                                ${task.dispatchNumber}
+                                            </a>` 
+                                            : ''}
+                                            </div>
+                                    </div>
+                                    <button class="btn btn-sm btn-outline-secondary border-0" onclick='openDetailFromButton(this)' title="Ver detalles"><i class="bi bi-eye"></i></button>
+                                </div>`;
+                            taskList.appendChild(item);
+                        });
+                    });
+            }
+
+
+            // --- FUNCIONES GLOBALES Y MODALES ---
+
+            // Marcar/Desmarcar Tarea
+            window.toggleTaskComplete = function(id) {
+                fetch('/Calendar/ToggleComplete?id=' + id, { method: 'POST' })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Recargar AMBAS listas y el calendario
+                            loadPendingTasks(searchInput.value);
+                            loadCompletedTasks(searchInput.value);
+                            calendar.refetchEvents();
+                        }
+                    });
+            };
+
+            // Abrir Modal de Detalles (desde botón)
             window.openDetailFromButton = function(buttonEl) {
-                // Recuperamos los datos guardados en el atributo data-task del padre
                 var taskData = JSON.parse(buttonEl.closest('.list-group-item').dataset.task);
                 showTaskDetails(taskData);
             };
 
+            // Mostrar Modal de Detalles (lógica)
             function showTaskDetails(task) {
                 document.getElementById('detailTitle').innerText = task.title;
                 document.getElementById('detailStart').innerText = new Date(task.start).toLocaleString('es-ES');
@@ -374,43 +486,28 @@
                 document.getElementById('detailDispatch').innerText = task.dispatchNumber || 'Ninguno';
                 document.getElementById('detailDescription').innerText = task.description || 'Sin descripción adicional.';
                 
-                // Configurar el botón de "Completar" del modal
                 var btnComplete = document.getElementById('btnCompleteFromModal');
                 btnComplete.onclick = function() {
                     toggleTaskComplete(task.id);
                     taskDetailsModal.hide();
                 };
-
                 taskDetailsModal.show();
             }
 
-            // --- FUNCIONES GLOBALES Y MODAL DE CREACIÓN (Igual que antes) ---
-            window.toggleTaskComplete = function(id) {
-                fetch('/Calendar/ToggleComplete?id=' + id, { method: 'POST' })
-                    .then(r => r.json())
-                    .then(data => {
-                        if (data.success) {
-                            loadTasks(document.getElementById('taskSearch').value);
-                            calendar.refetchEvents();
-                        }
-                    });
-            };
-
-            // ... (Mantén aquí las funciones openCreateModal, loadActiveDispatches y el listener de saveEventBtn exactamente como estaban en la Parte 15) ...
-            // Para ahorrar espacio no las repito todas, pero ASEGÚRATE DE QUE ESTÉN AQUÍ.
-            
-             function openCreateModal(dateStr) {
+            // Abrir Modal de Creación
+            function openCreateModal(dateStr) {
+                document.getElementById('eventForm').reset();
                 document.getElementById('eventStart').value = dateStr + 'T09:00';
                 document.getElementById('eventEnd').value = dateStr + 'T10:00';
-                document.getElementById('eventTitle').value = '';
-                document.getElementById('eventDescription').value = '';
                 loadActiveDispatches();
                 eventModal.show();
             }
+            
+            // Cargar Despachos en Modal
             var dispatchesLoaded = false;
             function loadActiveDispatches() {
-                 if (dispatchesLoaded) return;
-                 fetch('/Calendar/GetActiveDispatches')
+                 if (dispatchesLoaded) return; // Solo cargar una vez
+                 fetch('@Url.Action("GetActiveDispatches", "Calendar")')
                     .then(r => r.json())
                     .then(data => {
                         var select = document.getElementById('eventDispatch');
@@ -424,14 +521,10 @@
                         dispatchesLoaded = true;
                     });
             }
+            
+            // Guardar Evento Nuevo
             document.getElementById('saveEventBtn').addEventListener('click', function() {
-                 // ... tu lógica de guardar existente ...
-                 // Recuerda que al final del fetch de guardar debes llamar a:
-                 // calendar.refetchEvents();
-                 // loadTasks(); 
-                 // eventModal.hide();
-                 // Copia tu listener anterior completo aquí.
-                  var eventData = {
+                 var eventData = {
                     Title: document.getElementById('eventTitle').value,
                     Start: document.getElementById('eventStart').value,
                     End: document.getElementById('eventEnd').value || null,
@@ -439,7 +532,6 @@
                     Color: document.getElementById('eventColor').value,
                     Description: document.getElementById('eventDescription').value
                 };
-
                 if (!eventData.Title || !eventData.Start) {
                     alert('Por favor completa el título y la fecha de inicio.');
                     return;
@@ -453,7 +545,7 @@
                 }).then(r => r.json()).then(data => {
                     if (data.success) {
                         calendar.refetchEvents();
-                        loadTasks();
+                        loadPendingTasks(searchInput.value); // Recargar pendientes
                         eventModal.hide();
                     } else { alert('Error: ' + data.message); }
                 }).finally(() => { this.disabled = false; });

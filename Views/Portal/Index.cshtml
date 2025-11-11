@@ -1,37 +1,81 @@
+@using LogisticaBroker.Models.Enums
 @model IEnumerable<LogisticaBroker.Models.Dispatch>
 @{ ViewData["Title"] = "Mi Portal"; }
 
 <div class="container py-4">
     <h1 class="display-6 text-primary mb-4"><i class="bi bi-briefcase-fill me-3"></i>Mis Despachos</h1>
 
+    <div class="card shadow-sm mb-4 border-0 bg-light">
+        <div class="card-body py-3">
+            <form asp-action="Index" method="get" class="row g-3 align-items-center">
+                <div class="col-md-6 col-lg-5">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0">
+                            <i class="bi bi-search text-muted"></i>
+                        </span>
+                        <input type="text" name="searchTerm" class="form-control border-start-0 ps-0" 
+                               placeholder="Buscar por Nro. Despacho, BL o Contenedor..." 
+                               value="@ViewBag.CurrentSearch" />
+                        <button type="submit" class="btn btn-dark">Buscar</button>
+                    </div>
+                </div>
+                @if (!string.IsNullOrEmpty(ViewBag.CurrentSearch))
+                {
+                    <div class="col-auto">
+                        <a asp-action="Index" class="btn btn-outline-secondary">Limpiar Filtro</a>
+                    </div>
+                }
+            </form>
+        </div>
+    </div>
     @if (!Model.Any())
     {
-        <div class="alert alert-info text-center">
-            Aún no tienes despachos registrados en nuestro sistema.
-        </div>
+        @if (!string.IsNullOrEmpty(ViewBag.CurrentSearch))
+        {
+            <div class="alert alert-warning text-center">
+                No se encontraron despachos que coincidan con su búsqueda.
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-info text-center">
+                Aún no tienes despachos registrados en nuestro sistema.
+            </div>
+        }
     }
     else
     {
         <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
             @foreach (var item in Model)
             {
-                 var statusBadge = item.Status.ToString() switch {
-                    "Completed" => "bg-success",
-                    "Released" => "bg-info text-dark",
+                // Lógica para definir el color del badge de estado
+                var statusBadge = item.Status switch {
+                    DispatchStatus.Completed => "bg-success",
+                    DispatchStatus.Released => "bg-info text-dark",
+                    DispatchStatus.Customs => "bg-warning text-dark",
                     _ => "bg-primary"
                 };
+
                 <div class="col">
                     <div class="card h-100 shadow-sm hover-shadow transition">
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-start mb-3">
-                                <h5 class="card-title fw-bold text-dark">@item.DispatchNumber</h5>
-                                <span class="badge @statusBadge">@item.Status</span>
+                                <h5 class="card-title fw-bold text-dark mb-0">@item.DispatchNumber</h5>
+                                <span class="badge @statusBadge">@Html.DisplayFor(modelItem => item.Status)</span>
                             </div>
                             <p class="card-text text-muted small mb-2">
-                                <i class="bi bi-calendar-event me-1"></i>Llegada: @(item.ArrivalDate?.ToString("dd/MM/yyyy") ?? "Pendiente")
+                                <i class="bi bi-calendar-event me-1"></i>
+                                Llegada: @(item.ArrivalDate?.ToLocalTime().ToString("dd/MM/yyyy") ?? "Pendiente")
                             </p>
                             @if(!string.IsNullOrEmpty(item.BLNumber)) {
-                                <p class="card-text small"><strong>BL:</strong> @item.BLNumber</p>
+                                <p class="card-text small mb-1">
+                                    <strong class="text-muted">BL:</strong> @item.BLNumber
+                                </p>
+                            }
+                            @if(!string.IsNullOrEmpty(item.ContainerNumber)) {
+                                <p class="card-text small mb-0">
+                                    <strong class="text-muted">Cont.:</strong> @item.ContainerNumber
+                                </p>
                             }
                         </div>
                         <div class="card-footer bg-white border-top-0">

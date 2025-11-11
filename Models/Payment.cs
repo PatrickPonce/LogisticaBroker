@@ -1,9 +1,13 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using LogisticaBroker.Models.Enums;
+// Ya no necesitamos los Enums de PaymentType o PaymentStatus aquí
+// using LogisticaBroker.Models.Enums; 
 
 namespace LogisticaBroker.Models
 {
+    /// <summary>
+    /// Representa un PAGO REALIZADO (comprobante) asociado a un despacho.
+    /// </summary>
     public class Payment
     {
         public int Id { get; set; }
@@ -13,31 +17,32 @@ namespace LogisticaBroker.Models
         public Dispatch? Dispatch { get; set; }
 
         [Required]
-        [Display(Name = "Tipo de Pago")]
-        public PaymentType PaymentType { get; set; }
-
-        [Required]
         [Column(TypeName = "decimal(18,2)")]
-        [Display(Name = "Monto (USD)")]
+        [Display(Name = "Monto Pagado (USD)")]
         [Range(0.01, double.MaxValue, ErrorMessage = "El monto debe ser mayor a 0")]
-        public decimal Amount { get; set; }
+        public decimal Amount { get; set; } // Es el monto del comprobante
 
         [Required]
-        [Display(Name = "Estado")]
-        public PaymentStatus Status { get; set; } = PaymentStatus.Pending;
-
-        [DataType(DataType.Date)]
-        [Display(Name = "Fecha Vencimiento")]
-        public DateTime? DueDate { get; set; }
-
         [DataType(DataType.Date)]
         [Display(Name = "Fecha de Pago")]
-        public DateTime? PaidDate { get; set; }
+        public DateTime PaidDate { get; set; } // Un pago ya se hizo, la fecha es requerida
 
         [Display(Name = "Notas")]
         public string? Notes { get; set; }
 
+        // --- RELACIÓN CON EL COMPROBANTE FÍSICO ---
+        // Vínculo con el archivo (que subiremos en el controlador)
+        [Display(Name = "Comprobante Adjunto")]
+        public int? DocumentId { get; set; }
+        public Document? Document { get; set; }
+        // ------------------------------------------
+
         // Auditoría
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        // --- CAMPOS ELIMINADOS DE LA PARTE 10 ---
+        // public PaymentType PaymentType { get; set; }
+        // public PaymentStatus Status { get; set; } = PaymentStatus.Pending;
+        // public DateTime? DueDate { get; set; }
     }
 }

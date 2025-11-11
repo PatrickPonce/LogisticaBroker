@@ -54,5 +54,7 @@ namespace LogisticaBroker.Models
         public ICollection<Document> Documents { get; set; } = new List<Document>();
         public ICollection<DispatchTimeline> Timeline { get; set; } = new List<DispatchTimeline>();
         public ICollection<Payment> Payments { get; set; } = new List<Payment>();
+
+        public ICollection<DispatchCost> Costs { get; set; } = new List<DispatchCost>();
     }
 }

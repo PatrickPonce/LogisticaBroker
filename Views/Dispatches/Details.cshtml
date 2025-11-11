@@ -18,6 +18,12 @@
         DispatchChannel.Red => "bg-danger",
         _ => "bg-secondary"
     };
+    // (CRITERIO 3) Lógica de cálculo de deuda
+    var costoTotal = Model.Costs?.Sum(c => c.Amount) ?? 0;
+    var totalPagado = Model.Payments?.Sum(p => p.Amount) ?? 0;
+    var deudaPendiente = costoTotal - totalPagado;
+    var estadoDeuda = deudaPendiente <= 0 && costoTotal > 0 ? "Liquidado" : (costoTotal == 0 ? "Sin Costos" : "Pendiente");
+    var deudaBadge = deudaPendiente <= 0 && costoTotal > 0 ? "bg-success" : (costoTotal == 0 ? "bg-secondary" : "bg-danger");
 }
 
 <div class="container py-4">
@@ -29,7 +35,7 @@
             <p class="text-muted lead">Detalle del Despacho</p>
         </div>
         <div class="text-end">
-            <span class="badge @statusBadge fs-5 mb-2 d-block">@Html.DisplayFor(model => model.Status)</span>
+            <span class="badge @statusBadge ms-2">@Html.DisplayFor(model => model.Status)</span>
             <span class="badge @channelBadge fs-6">Canal: @Html.DisplayFor(model => model.Channel)</span>
         </div>
     </div>
@@ -125,7 +131,7 @@
         <div class="col-lg-4 mb-4">
             <div class="card shadow-sm">
                 <div class="card-header bg-primary text-white fw-bold">
-                    <i class="bi bi-arrow-repeat me-2"></i>Actualizar Estado
+                    <i class="bi bi-arrow-repeat me-2"></i>Actualizar Seguimiento (Hito)
                 </div>
                 <div class="card-body">
                     <form asp-action="ChangeStatus" method="post">
@@ -255,6 +261,9 @@
             <div class="card shadow-sm border-secondary border-top border-4">
                 <div class="card-header bg-white d-flex justify-content-between align-items-center">
                     <h5 class="mb-0 fw-bold"><i class="bi bi-file-earmark-text me-2"></i>Documentos Adjuntos</h5>
+                    <button type="button" class="btn btn-sm btn-info me-2" data-bs-toggle="modal" data-bs-target="#notifyClientModal">
+                        <i class="bi bi-send-fill me-1"></i> Notificar al Cliente
+                    </button>
                     <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#uploadModal">
                         <i class="bi bi-cloud-upload me-1"></i> Subir Nuevo
                     </button>
@@ -287,10 +296,15 @@
                                             </td>
                                             <td>@doc.UploadedAt.ToLocalTime().ToString("g")</td>
                                             <td class="text-end">
-                                                <a asp-controller="Documents" asp-action="Download" asp-route-id="@doc.Id" class="btn btn-sm btn-outline-primary" title="Descargar">
-                                                    <i class="bi bi-download"></i>
-                                                </a>
-                                                <form asp-controller="Documents" asp-action="Delete" asp-route-id="@doc.Id" method="post" class="d-inline" onsubmit="return confirm('¿Borrar este documento permanentemente?');">
+                                                <div class="btn-group btn-group-sm" role="group">
+                                                    <a asp-controller="Documents" asp-action="Preview" asp-route-id="@doc.Id" target="_blank" class="btn btn-outline-primary" title="Previsualizar">
+                                                        <i class="bi bi-eye"></i> Ver
+                                                    </a>
+                                                    <a asp-controller="Documents" asp-action="Download" asp-route-id="@doc.Id" class="btn btn-outline-secondary" title="Descargar">
+                                                        <i class="bi bi-download"></i>
+                                                    </a>
+                                                </div>
+                                                <form asp-controller="Documents" asp-action="Delete" asp-route-id="@doc.Id" method="post" class="d-inline ms-1" onsubmit="return confirm('¿Borrar este documento permanentemente?');">
                                                     <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar">
                                                         <i class="bi bi-trash"></i>
                                                     </button>
@@ -351,129 +365,263 @@
             </div>
         </div>
     </div>
+
     <div class="row mt-4">
         <div class="col-12">
             <div class="card shadow-sm border-success border-top border-4">
-                <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0 fw-bold text-success"><i class="bi bi-cash-stack me-2"></i>Pagos y Liquidación</h5>
-                    <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#paymentModal">
-                        <i class="bi bi-plus-circle me-1"></i> Registrar Pago
-                    </button>
+                <div class="card-header bg-white">
+                    <h5 class="mb-0 fw-bold text-success"><i class="bi bi-cash-stack me-2"></i>Liquidación de Gastos</h5>
                 </div>
-                <div class="card-body p-0">
-                    @if (Model.Payments != null && Model.Payments.Any())
-                    {
-                        <div class="table-responsive">
-                            <table class="table table-hover mb-0 align-middle">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>Concepto</th>
-                                        <th>Monto (USD)</th>
-                                        <th>Estado</th>
-                                        <th>Vencimiento</th>
-                                        <th>Pagado El</th>
-                                        <th class="text-end">Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var pay in Model.Payments.OrderBy(p => p.DueDate))
-                                    {
-                                        var badgeClass = pay.Status switch {
-                                            LogisticaBroker.Models.Enums.PaymentStatus.Paid => "bg-success",
-                                            LogisticaBroker.Models.Enums.PaymentStatus.Pending => "bg-warning text-dark",
-                                            _ => "bg-danger"
-                                        };
+                <div class="card-body">
+                    <div class="row g-3 mb-4 text-center">
+                        <div class="col-md-4">
+                            <div class="bg-light p-3 rounded border">
+                                <label class="small text-muted fw-bold">COSTO TOTAL (Facturas)</label>
+                                <div class="fs-4 fw-bold text-dark">$ @costoTotal.ToString("N2")</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="bg-light p-3 rounded border">
+                                <label class="small text-muted fw-bold">TOTAL PAGADO (Comprobantes)</label>
+                                <div class="fs-4 fw-bold text-success">$ @totalPagado.ToString("N2")</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-3 rounded border @(deudaPendiente <= 0 ? "border-success" : "border-danger")">
+                                <label class="small fw-bold @(deudaPendiente <= 0 ? "text-success" : "text-danger")">DEUDA PENDIENTE</label>
+                                <div class="fs-4 fw-bold text-danger">$ @deudaPendiente.ToString("N2")</div>
+                                <span class="badge @deudaBadge">@estadoDeuda</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <ul class="nav nav-tabs nav-fill mb-3" id="liqTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active fw-bold" id="costs-tab" data-bs-toggle="tab" data-bs-target="#costs" type="button" role="tab">
+                                <i class="bi bi-file-earmark-ruled me-1 text-danger"></i>Costos / Facturas (@Model.Costs.Count)
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link fw-bold" id="payments-tab" data-bs-toggle="tab" data-bs-target="#payments" type="button" role="tab">
+                                <i class="bi bi-receipt me-1 text-success"></i>Pagos / Comprobantes (@Model.Payments.Count)
+                            </button>
+                        </li>
+                    </ul>
+                    
+                    <div class="tab-content" id="liqTabsContent">
+                        <div class="tab-pane fade show active" id="costs" role="tabpanel">
+                            <button type="button" class="btn btn-sm btn-danger mb-3" data-bs-toggle="modal" data-bs-target="#costModal">
+                                <i class="bi bi-plus-circle me-1"></i> Registrar Costo/Factura
+                            </button>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover align-middle">
+                                    <thead class="table-light">
                                         <tr>
-                                            <td>
-                                                <span class="fw-bold">@Html.DisplayFor(m => pay.PaymentType)</span>
-                                                @if (!string.IsNullOrEmpty(pay.Notes)) { <br/><small class="text-muted">@pay.Notes</small> }
-                                            </td>
-                                            <td class="font-monospace">$ @pay.Amount.ToString("N2")</td>
-                                            <td><span class="badge @badgeClass">@Html.DisplayFor(m => pay.Status)</span></td>
-                                            <td>@(pay.DueDate?.ToLocalTime().ToString("dd/MM/yyyy") ?? "-")</td>
-                                            <td>@(pay.PaidDate?.ToLocalTime().ToString("dd/MM/yyyy") ?? "-")</td>
-                                            <td class="text-end">
-                                                <form asp-controller="Payments" asp-action="Delete" asp-route-id="@pay.Id" method="post" class="d-inline" onsubmit="return confirm('¿Eliminar este registro de pago?');">
-                                                    <button type="submit" class="btn btn-sm btn-outline-danger border-0"><i class="bi bi-trash"></i></button>
-                                                </form>
-                                            </td>
+                                            <th>Concepto</th>
+                                            <th>Monto Costo</th>
+                                            <th>Vencimiento</th>
+                                            <th>Factura Adjunta</th>
                                         </tr>
-                                    }
-                                </tbody>
-                                <tfoot class="table-light fw-bold">
-                                    <tr>
-                                        <td class="text-end">TOTAL:</td>
-                                        <td class="font-monospace text-primary">$ @Model.Payments.Sum(p => p.Amount).ToString("N2")</td>
-                                        <td colspan="4"></td>
-                                    </tr>
-                                </tfoot>
-                            </table>
+                                    </thead>
+                                    <tbody>
+                                        @if (Model.Costs != null && Model.Costs.Any())
+                                        {
+                                            @foreach (var cost in Model.Costs.OrderByDescending(p => p.CreatedAt))
+                                            {
+                                                <tr>
+                                                    <td class="fw-bold">@Html.DisplayFor(m => cost.Concept)</td>
+                                                    <td class="font-monospace">$ @cost.Amount.ToString("N2")</td>
+                                                    <td>@(cost.DueDate?.ToLocalTime().ToString("dd/MM/yyyy") ?? "-")</td>
+                                                    <td>
+                                                        @if (cost.DocumentId.HasValue && cost.Document != null) {
+                                                            <div class="btn-group btn-group-sm" role="group">
+                                                                <a asp-controller="Documents" asp-action="Preview" asp-route-id="@cost.DocumentId" target="_blank" class="btn btn-outline-danger">
+                                                                    <i class="bi bi-eye me-1"></i> @cost.Document.FileName
+                                                                </a>
+                                                                <a asp-controller="Documents" asp-action="Download" asp-route-id="@cost.DocumentId" class="btn btn-outline-danger">
+                                                                    <i class="bi bi-download"></i>
+                                                                </a>
+                                                            </div>
+                                                        }
+                                                    </td>
+                                                </tr>
+                                            }
+                                        } else {
+                                            <tr><td colspan="4" class="text-center text-muted fst-italic py-3">No hay costos registrados.</td></tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
-                    }
-                    else
-                    {
-                        <div class="text-center py-4 text-muted">
-                            <i class="bi bi-wallet2 fs-1 d-block mb-2 opacity-50"></i>
-                            No hay pagos registrados para este despacho.
+
+                        <div class="tab-pane fade" id="payments" role="tabpanel">
+                            <button type="button" class="btn btn-sm btn-success mb-3" data-bs-toggle="modal" data-bs-target="#paymentModal">
+                                <i class="bi bi-plus-circle me-1"></i> Registrar Comprobante de Pago
+                            </button>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover align-middle">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Monto Pagado</th>
+                                            <th>Fecha de Pago</th>
+                                            <th>Notas</th>
+                                            <th>Comprobante Adjunto</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @if (Model.Payments != null && Model.Payments.Any())
+                                        {
+                                            @foreach (var pay in Model.Payments.OrderByDescending(p => p.PaidDate))
+                                            {
+                                                <tr>
+                                                    <td class="fw-bold font-monospace">$ @pay.Amount.ToString("N2")</td>
+                                                    <td>@pay.PaidDate.ToLocalTime().ToString("dd/MM/yyyy")</td>
+                                                    <td class="small">@(pay.Notes ?? "-")</td>
+                                                    <td>
+                                                        @if (pay.DocumentId.HasValue && pay.Document != null) {
+                                                            <div class="btn-group btn-group-sm" role="group">
+                                                                <a asp-controller="Documents" asp-action="Preview" asp-route-id="@pay.DocumentId" target="_blank" class="btn btn-outline-success">
+                                                                    <i class="bi bi-eye me-1"></i> @pay.Document.FileName
+                                                                </a>
+                                                                <a asp-controller="Documents" asp-action="Download" asp-route-id="@pay.DocumentId" class="btn btn-outline-success">
+                                                                    <i class="bi bi-download"></i>
+                                                                </a>
+                                                            </div>
+                                                        }
+                                                    </td>
+                                                </tr>
+                                            }
+                                        } else {
+                                            <tr><td colspan="4" class="text-center text-muted fst-italic py-3">No hay pagos registrados.</td></tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
-                    }
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="modal fade" id="paymentModal" tabindex="-1" aria-hidden="true">
+    <div class="modal fade" id="costModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
-                <div class="modal-header bg-success text-white">
-                    <h5 class="modal-title"><i class="bi bi-currency-dollar me-2"></i>Registrar Pago</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title"><i class="bi bi-file-earmark-ruled me-2"></i>Registrar Costo / Factura Pendiente</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
-                <form asp-controller="Payments" asp-action="Create" method="post">
+                <form asp-controller="DispatchCosts" asp-action="Create" method="post" enctype="multipart/form-data">
                     <div class="modal-body">
                         <input type="hidden" name="DispatchId" value="@Model.Id" />
                         
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold">Tipo de Pago</label>
-                                <select name="PaymentType" class="form-select" asp-items="Html.GetEnumSelectList<LogisticaBroker.Models.Enums.PaymentType>()" required></select>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold">Estado Inicial</label>
-                                <select name="Status" class="form-select" asp-items="Html.GetEnumSelectList<LogisticaBroker.Models.Enums.PaymentStatus>()" required></select>
-                            </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Concepto *</label>
+                            <select name="Concept" class="form-select" asp-items="Html.GetEnumSelectList<PaymentType>()" required></select>
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label fw-bold">Monto (USD) *</label>
-                            <div class="input-group">
-                                <span class="input-group-text">$</span>
-                                <input type="number" name="Amount" class="form-control" step="0.01" min="0.01" required placeholder="0.00" />
-                            </div>
+                            <label class="form-label fw-bold">Monto del Costo (USD) *</label>
+                            <input type="number" name="Amount" class="form-control" step="0.01" min="0.01" required placeholder="500.00" />
                         </div>
 
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Fecha Vencimiento</label>
-                                <input type="date" name="DueDate" class="form-control" />
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Fecha de Pago</label>
-                                <input type="date" name="PaidDate" class="form-control" />
-                            </div>
+                        <div class="mb-3">
+                            <label class="form-label">Fecha Vencimiento</label>
+                            <input type="date" name="DueDate" class="form-control" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Factura / Documento Pendiente *</label>
+                            <input type="file" name="facturaFile" class="form-control" required />
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label">Notas</label>
-                            <textarea name="Notes" class="form-control" rows="2" placeholder="Detalles adicionales..."></textarea>
+                            <textarea name="Notes" class="form-control" rows="2" placeholder="Ej: Factura N° F001-123"></textarea>
                         </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-success">Guardar Pago</button>
+                        <button type="submit" class="btn btn-danger">Guardar Costo</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
-</div>
+
+    <div class="modal fade" id="notifyClientModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <form asp-action="NotifyClientWithDocuments" method="post" onsubmit="selectAllSelectedDocs()">
+                    <div class="modal-header bg-info">
+                        <h5 class="modal-title"><i class="bi bi-send-fill me-2"></i>Notificar al Cliente</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" name="dispatchId" value="@Model.Id" />
+
+                        <div class="mb-3">
+                            <label class="form-label">Mensaje Personalizado (Opcional)</label>
+                            <textarea name="customMessage" class="form-control" rows="2" placeholder="Ej: Adjunto la factura y el BL actualizados..."></textarea>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-5">
+                                <label class="form-label fw-bold">Documentos Disponibles</label>
+                                <select id="docsAvailable" multiple class="form-control" style="height: 200px;">
+                                    @foreach (var doc in Model.Documents.OrderBy(d => d.FileName))
+                                    {
+                                        <option value="@doc.Id">@doc.FileName (@doc.DocType)</option>
+                                    }
+                                </select>
+                            </div>
+
+                            <div class="col-md-2 d-flex flex-column align-items-center justify-content-center gap-2">
+                                <button type="button" class="btn btn-outline-primary w-100" onclick="moveDocs('docsAvailable', 'docsSelected')">&gt;&gt;</button>
+                                <button type="button" class="btn btn-outline-secondary w-100" onclick="moveDocs('docsSelected', 'docsAvailable')">&lt;&lt;</button>
+                            </div>
+
+                            <div class="col-md-5">
+                                <label class="form-label fw-bold">Documentos a Notificar</label>
+                                <select id="docsSelected" name="selectedDocs" multiple class="form-control" style="height: 200px;"></select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                        <button type="submit" class="btn btn-info">
+                            <i class="bi bi-send-check-fill me-1"></i> Notificar Ahora
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+@section Scripts {
+    <script>
+        // Función para mover ítems entre las dos listas
+        function moveDocs(fromListId, toListId) {
+            const fromList = document.getElementById(fromListId);
+            const toList = document.getElementById(toListId);
+            
+            // Obtener todas las opciones seleccionadas
+            const selectedOptions = Array.from(fromList.selectedOptions);
+            
+            selectedOptions.forEach(option => {
+                toList.appendChild(option); // Moverla a la otra lista
+            });
+        }
+
+        // Función para seleccionar TODO en la lista "Seleccionado" antes de enviar
+        // (CRITERIO 4 - DADO QUE...)
+        function selectAllSelectedDocs() {
+            const selectedList = document.getElementById('docsSelected');
+            Array.from(selectedList.options).forEach(option => {
+                option.selected = true;
+            });
+            // Esto asegura que todos los IDs en la lista se envíen al controlador
+            return true;
+        }
+    </script>
+}

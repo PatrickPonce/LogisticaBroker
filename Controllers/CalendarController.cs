@@ -39,11 +39,13 @@ namespace LogisticaBroker.Controllers
 
             var events = await query
                 .Where(e => e.Start >= start && e.Start <= end)
-                .Select(e => new {
+                .Select(e => new
+                {
                     id = e.Id,
                     title = e.Title,
                     start = e.Start.ToString("yyyy-MM-ddTHH:mm:ss"), // Formato ISO vital para FullCalendar
                     end = e.End.HasValue ? e.End.Value.ToString("yyyy-MM-ddTHH:mm:ss") : null,
+                    dispatchId = e.DispatchId,
                     color = e.Color,
                     description = e.Description,
                     dispatchNumber = e.Dispatch != null ? e.Dispatch.DispatchNumber : ""
@@ -158,6 +160,7 @@ namespace LogisticaBroker.Controllers
                     end = e.End.HasValue ? e.End.Value.ToString("yyyy-MM-ddTHH:mm:ss") : null,
                     description = e.Description,
                     dispatchNumber = e.Dispatch != null ? e.Dispatch.DispatchNumber : null,
+                    dispatchId = e.DispatchId,
                     color = e.Color,
                     isOverdue = e.Start < DateTime.UtcNow // Para marcar en rojo si está vencida
                 })
@@ -178,5 +181,51 @@ namespace LogisticaBroker.Controllers
 
             return Json(new { success = true });
         }
+
+        // GET: /Calendar/GetCompletedTasks
+        [HttpGet]
+        public async Task<IActionResult> GetCompletedTasks(string? filter)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            var isClient = await _userManager.IsInRoleAsync(user!, "Client");
+
+            var query = _context.CalendarEvents
+                .Include(e => e.Dispatch)
+                .Where(e => e.IsCompleted == true); // <-- SOLO COMPLETADAS
+
+            // Si es cliente, filtrar solo las suyas
+            if (isClient)
+            {
+                query = query.Where(e => e.Dispatch != null && e.Dispatch.Client != null && e.Dispatch.Client.UserId == user!.Id);
+            }
+
+            // Filtro de texto
+            if (!string.IsNullOrEmpty(filter))
+            {
+                filter = filter.ToLower();
+                query = query.Where(e => 
+                    e.Title.ToLower().Contains(filter) || 
+                    (e.Dispatch != null && e.Dispatch.DispatchNumber.ToLower().Contains(filter))
+                );
+            }
+
+            // Ordenar por las más recientes primero y limitar
+            var tasks = await query
+                .OrderByDescending(e => e.Start) 
+                .Take(10) 
+                .Select(e => new
+                {
+                    id = e.Id,
+                    title = e.Title,
+                    start = e.Start.ToString("yyyy-MM-ddTHH:mm:ss"),
+                    dispatchNumber = e.Dispatch != null ? e.Dispatch.DispatchNumber : null,
+                    dispatchId = e.DispatchId,
+                    color = e.Color
+                })
+                .ToListAsync();
+
+            return Json(tasks);
+        }
+
     }
 }

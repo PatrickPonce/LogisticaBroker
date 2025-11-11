@@ -3,6 +3,7 @@ using System;
 using LogisticaBroker.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace LogisticaBroker.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251111051103_RefactorLiquidaciones")]
+    partial class RefactorLiquidaciones
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -232,6 +235,9 @@ namespace LogisticaBroker.Migrations
                     b.Property<string>("ContainerNumber")
                         .HasColumnType("text");
 
+                    b.Property<decimal>("CostoTotalEstimado")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp without time zone");
 
@@ -268,44 +274,6 @@ namespace LogisticaBroker.Migrations
                         .IsUnique();
 
                     b.ToTable("Dispatches");
-                });
-
-            modelBuilder.Entity("LogisticaBroker.Models.DispatchCost", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<decimal>("Amount")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<int>("Concept")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.Property<int>("DispatchId")
-                        .HasColumnType("integer");
-
-                    b.Property<int?>("DocumentId")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime?>("DueDate")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.Property<string>("Notes")
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("DispatchId");
-
-                    b.HasIndex("DocumentId");
-
-                    b.ToTable("DispatchCosts");
                 });
 
             modelBuilder.Entity("LogisticaBroker.Models.DispatchTimeline", b =>
@@ -644,23 +612,6 @@ namespace LogisticaBroker.Migrations
                     b.Navigation("Client");
                 });
 
-            modelBuilder.Entity("LogisticaBroker.Models.DispatchCost", b =>
-                {
-                    b.HasOne("LogisticaBroker.Models.Dispatch", "Dispatch")
-                        .WithMany("Costs")
-                        .HasForeignKey("DispatchId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("LogisticaBroker.Models.Document", "Document")
-                        .WithMany()
-                        .HasForeignKey("DocumentId");
-
-                    b.Navigation("Dispatch");
-
-                    b.Navigation("Document");
-                });
-
             modelBuilder.Entity("LogisticaBroker.Models.DispatchTimeline", b =>
                 {
                     b.HasOne("LogisticaBroker.Models.ApplicationUser", "ChangedBy")
@@ -781,8 +732,6 @@ namespace LogisticaBroker.Migrations
 
             modelBuilder.Entity("LogisticaBroker.Models.Dispatch", b =>
                 {
-                    b.Navigation("Costs");
-
                     b.Navigation("Documents");
 
                     b.Navigation("Payments");

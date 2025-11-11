@@ -72,12 +72,38 @@ namespace LogisticaBroker.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("Id,CompanyName,RUC,Email,Phone,Address,ContactPerson,Notes")] Client client)
         {
+            // --- INICIO DE VALIDACIÓN PERSONALIZADA ---
+            // Verificamos si el RUC ya existe ANTES de validar el modelo
+            if (!string.IsNullOrEmpty(client.RUC))
+            {
+                var rucExists = await _context.Clients.AnyAsync(c => c.RUC == client.RUC);
+                if (rucExists)
+                {
+                    // (Criterio de Aceptación)
+                    ModelState.AddModelError("RUC", "Este RUC ya se encuentra registrado en el sistema.");
+                }
+            }
+
+            // Verificamos si el Email ya existe
+            if (!string.IsNullOrEmpty(client.Email))
+            {
+                var emailExists = await _context.Clients.AnyAsync(c => c.Email == client.Email);
+                if (emailExists)
+                {
+                    ModelState.AddModelError("Email", "Este correo electrónico ya está en uso por otro cliente.");
+                }
+            }
+            // --- FIN DE VALIDACIÓN PERSONALIZADA ---
+
             if (ModelState.IsValid)
             {
                 _context.Add(client);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
+            
+            // Si llegamos aquí, algo falló (ya sea la validación [Required] o la nuestra)
+            // Devolvemos la vista con los mensajes de error.
             return View(client);
         }
 

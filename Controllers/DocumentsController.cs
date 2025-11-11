@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using LogisticaBroker.Data;
 using LogisticaBroker.Models;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 
 namespace LogisticaBroker.Controllers
 {
@@ -11,11 +12,13 @@ namespace LogisticaBroker.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly IWebHostEnvironment _env;
+        private readonly UserManager<ApplicationUser> _userManager;
 
-        public DocumentsController(ApplicationDbContext context, IWebHostEnvironment env)
+        public DocumentsController(ApplicationDbContext context, IWebHostEnvironment env, UserManager<ApplicationUser> userManager)
         {
             _context = context;
             _env = env;
+            _userManager = userManager;
         }
 
         // POST: Documents/Upload
@@ -72,6 +75,44 @@ namespace LogisticaBroker.Controllers
                 return NotFound("El archivo físico no existe en el servidor.");
 
             return PhysicalFile(filePath, document.ContentType ?? "application/octet-stream", document.FileName);
+        }
+
+        // GET: Documents/Preview/5
+        [HttpGet]
+        public async Task<IActionResult> Preview(int? id)
+        {
+            if (id == null) return NotFound();
+
+            var document = await _context.Documents
+                .Include(d => d.Dispatch) // Incluimos el despacho para seguridad
+                .FirstOrDefaultAsync(m => m.Id == id);
+            
+            if (document == null) return NotFound();
+
+            // --- Verificación de Seguridad (Opcional pero RECOMENDADA) ---
+            // Asegurarnos que el cliente solo vea sus propios documentos
+            if (User.IsInRole(Roles.Client))
+            {
+                var user = await _userManager.GetUserAsync(User);
+                var client = await _context.Clients
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(c => c.UserId == user.Id);
+                    
+                if (document.Dispatch?.ClientId != client?.Id)
+                {
+                    return Forbid(); // El documento no le pertenece
+                }
+            }
+            // --- Fin Verificación de Seguridad ---
+
+            var filePath = Path.Combine(_env.WebRootPath, document.FilePath.TrimStart('/'));
+
+            if (!System.IO.File.Exists(filePath))
+                return NotFound("El archivo físico no existe en el servidor.");
+
+            // Al no pasar un 'fileName' (tercer argumento), el navegador
+            // intentará mostrarlo (Content-Disposition: inline)
+            return PhysicalFile(filePath, document.ContentType ?? "application/octet-stream");
         }
 
         // POST: Documents/Delete/5

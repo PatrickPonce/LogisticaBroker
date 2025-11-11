@@ -22,27 +22,8 @@
                 </button>
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
-                        @if (User.IsInRole("Admin"))
-                        {
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle text-dark" href="#" role="button" data-bs-toggle="dropdown">
-                                    Administración
-                                </a>
-                                <ul class="dropdown-menu">
-                                    <li><a class="dropdown-item" asp-controller="Clients" asp-action="Index">Gestión Clientes</a></li>
-                                    <li><a class="dropdown-item" asp-controller="Dispatches" asp-action="Index">Gestión Despachos</a></li>
-                                    <li><hr class="dropdown-divider"></li>
-                                    <li><span class="dropdown-item-text text-muted small">Configuración</span></li>
-                                </ul>
-                            </li>
-                        }
-                        @if (User.IsInRole("Client"))
+                        
+                        @if (User.Identity.IsAuthenticated && User.IsInRole("Client"))
                         {
                             <li class="nav-item">
                                 <a class="nav-link text-dark fw-bold" asp-area="" asp-controller="Portal" asp-action="Index">
@@ -50,6 +31,32 @@
                                 </a>
                             </li>
                         }
+                        else
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">
+                                    <i class="bi bi-speedometer2 me-1"></i> Dashboard
+                                </a>
+                            </li>
+
+                            @if (User.IsInRole("Admin"))
+                            {
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle text-dark" href="#" role="button" data-bs-toggle="dropdown">
+                                        <i class="bi bi-briefcase-fill me-1"></i> Administración
+                                    </a>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" asp-controller="Clients" asp-action="Index">Gestión Clientes</a></li>
+                                        <li><a class="dropdown-item" asp-controller="Dispatches" asp-action="Index">Gestión Despachos</a></li>
+                                    </ul>
+                                </li>
+                            }
+                        }
+
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Ayuda</a>
+                        </li>
+
                     </ul>
 
                     <ul class="navbar-nav align-items-center">

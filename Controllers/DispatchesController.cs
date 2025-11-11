@@ -89,6 +89,12 @@ namespace LogisticaBroker.Controllers
                     .ThenInclude(t => t.ChangedBy)
                 .Include(d => d.Timeline)           // <--- NUEVO: Incluir...
                     .ThenInclude(t => t.Documents)
+                .Include(d => d.Payments)           // Cargar pagos
+                    .ThenInclude(p => p.Document) // Cargar el documento de cada pago
+                .Include(d => d.Costs)              // <--- Cargar Costos/Facturas
+                    .ThenInclude(c => c.Document) // <--- Cargar el documento de la factura
+                .Include(d => d.Payments)           // Cargar Pagos/Comprobantes
+                    .ThenInclude(p => p.Document) // Cargar el documento del comprobante
                 .Include(d => d.Payments)
                 .FirstOrDefaultAsync(m => m.Id == id);
 
@@ -138,7 +144,7 @@ namespace LogisticaBroker.Controllers
         // POST: Dispatches/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,DispatchNumber,BLNumber,ClientId,Supplier,ShippingLine,ArrivalDate,Channel,Status,ContainerNumber,Port,Weight,Value,CreatedAt")] Dispatch dispatch)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,DispatchNumber,BLNumber,ClientId,Supplier,ShippingLine,ArrivalDate,Channel,Status,ContainerNumber,Port,Weight,Value,CreatedAt,CostoTotalEstimado")] Dispatch dispatch)
         {
             if (id != dispatch.Id) return NotFound();
 
@@ -339,7 +345,7 @@ namespace LogisticaBroker.Controllers
                 }
             }
         }
-        
+
         // GET: Dispatches/Preview/5
         public async Task<IActionResult> Preview(int? id)
         {
@@ -356,6 +362,66 @@ namespace LogisticaBroker.Controllers
             // Devolvemos una Vista Parcial (solo el HTML interno del modal)
             return PartialView("_Preview", dispatch);
         }
+        
+        // POST: Dispatches/NotifyClientWithDocuments
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> NotifyClientWithDocuments(int dispatchId, string customMessage, int[] selectedDocs)
+        {
+            var dispatch = await _context.Dispatches
+                .Include(d => d.Client)
+                .FirstOrDefaultAsync(d => d.Id == dispatchId);
+
+            if (dispatch == null) return NotFound();
+
+            // CRITERIO 4 (DADO QUE... presiona "Notificar"):
+            // 1. Validar que se seleccionaron documentos
+            if (selectedDocs == null || selectedDocs.Length == 0)
+            {
+                TempData["Error"] = "No se seleccionó ningún documento para notificar.";
+                return RedirectToAction(nameof(Details), new { id = dispatchId });
+            }
+
+            // 2. Cargar los documentos seleccionados desde la BD (por seguridad)
+            var docsToLink = await _context.Documents
+                .Where(d => selectedDocs.Contains(d.Id) && d.DispatchId == dispatchId)
+                .ToListAsync();
+
+            var docNames = string.Join(", ", docsToLink.Select(d => d.FileName));
+            var message = string.IsNullOrEmpty(customMessage) ? $"Nuevos documentos disponibles: {docNames}" : customMessage;
+
+            // 3. Crear un registro en el historial (Timeline)
+            var timelineEntry = new DispatchTimeline
+            {
+                DispatchId = dispatchId,
+                Status = dispatch.Status, // Mantenemos el estado actual
+                Notes = $"Notificación enviada al cliente. Documentos: {docNames}. Mensaje: {message}",
+                ChangedById = _userManager.GetUserId(User)
+            };
+            
+            // Adjuntamos los documentos al historial
+            foreach (var doc in docsToLink)
+            {
+                timelineEntry.Documents.Add(doc);
+            }
+            _context.DispatchTimelines.Add(timelineEntry);
+
+            // 4. Disparar la notificación (CRITERIO 4)
+            if (dispatch.Client != null && !string.IsNullOrEmpty(dispatch.Client.UserId))
+            {
+                await _notificationService.NotifyUserAsync(
+                    dispatch.Client.UserId,
+                    "Documentos Importantes",
+                    message,
+                    dispatch.Id,
+                    "info"
+                );
+            }
+
+            await _context.SaveChangesAsync();
+            TempData["Success"] = "Notificación enviada al cliente exitosamente.";
+            return RedirectToAction(nameof(Details), new { id = dispatchId });
+}
 
     }
 }

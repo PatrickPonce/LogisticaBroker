@@ -6,6 +6,7 @@ using LogisticaBroker.Models;
 using LogisticaBroker.Models.ViewModels;
 using LogisticaBroker.Models.Enums;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 
 namespace LogisticaBroker.Controllers
 {
@@ -14,22 +15,36 @@ namespace LogisticaBroker.Controllers
     {
         private readonly ILogger<HomeController> _logger;
         private readonly ApplicationDbContext _context;
+        private readonly UserManager<ApplicationUser> _userManager;
 
-        public HomeController(ILogger<HomeController> logger, ApplicationDbContext context)
+        public HomeController(ILogger<HomeController> logger, ApplicationDbContext context, UserManager<ApplicationUser> userManager)
         {
             _logger = logger;
             _context = context;
+            _userManager = userManager;
         }
 
         public async Task<IActionResult> Index()
         {
-            // 1. Preparar el ViewModel
+            // --- INICIO DE LA VALIDACIÓN DE ROL ---
+            // Verificamos si el usuario actual tiene el rol "Client"
+            if (User.IsInRole(Roles.Client))
+            {
+                // Si es Cliente, lo redirigimos inmediatamente a su portal.
+                return RedirectToAction("Index", "Portal");
+            }
+            // --- FIN DE LA VALIDACIÓN DE ROL ---
+
+            // Si llegamos aquí, significa que el usuario NO es un Cliente.
+            // Como el controlador tiene [Authorize], asumimos que es un Admin.
+            // (Puedes hacerlo más estricto con: if (User.IsInRole(Roles.Admin)))
+            
+            // 1. Preparar el ViewModel del Dashboard
             var viewModel = new DashboardViewModel();
 
             // 2. Obtener contadores (KPIs)
             viewModel.TotalClients = await _context.Clients.CountAsync();
             
-            // Consideramos "Activos" a los que NO están completados ni liberados
             viewModel.ActiveDispatches = await _context.Dispatches
                 .Where(d => d.Status != DispatchStatus.Completed && d.Status != DispatchStatus.Released)
                 .CountAsync();
@@ -45,10 +60,11 @@ namespace LogisticaBroker.Controllers
             // 3. Obtener los 5 despachos más recientes
             viewModel.RecentDispatches = await _context.Dispatches
                 .Include(d => d.Client)
-                .OrderByDescending(d => d.UpdatedAt) // Ordenar por última actualización
+                .OrderByDescending(d => d.UpdatedAt) 
                 .Take(5)
                 .ToListAsync();
 
+            // Devolvemos la vista del Panel de Control solo al Admin
             return View(viewModel);
         }
 
