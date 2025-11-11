@@ -44,9 +44,11 @@ namespace LogisticaBroker.Models
         public string? Port { get; set; }
 
         [Column(TypeName = "decimal(18,2)")] // Importante para monedas/pesos en Postgres
+        [Display(Name = "Peso (Kg)")]
         public decimal? Weight { get; set; }
 
         [Column(TypeName = "decimal(18,2)")]
+        [Display(Name = "Valor (USD)")]
         public decimal? Value { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

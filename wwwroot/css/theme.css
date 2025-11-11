@@ -1,0 +1,141 @@
+/* wwwroot/css/theme.css (Versión 2.0) */
+
+/* 1. Definición de la Fuente y Colores Base */
+:root {
+    --brand-primary: #005792; /* Azul corporativo */
+    --brand-secondary: #007bff; /* Azul acento */
+    --brand-accent: #fdbe54;   /* Ámbar para alertas */
+    --bg-light: #f4f7f6;       /* Fondo gris sutil */
+    --text-dark: #2a3342;
+    --text-light: #5a6a85;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    color: var(--text-dark);
+
+    /* --- NUEVO FONDO SUTIL --- */
+    /* Este patrón de puntos es profesional y ayuda al efecto "glass" */
+    background-color: #f8f9fa;
+    background-image: 
+        radial-gradient(circle at 1px 1px, rgba(0, 87, 146, 0.15) 1px, transparent 0);
+    background-size: 20px 20px;
+    background-attachment: fixed; /* Importante para el efecto blur */
+}
+
+/* 2. Botones y Controles (Más suaves) */
+.btn {
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.2s ease-in-out;
+}
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+.form-control, .form-select {
+    border-radius: 8px;
+    border: 1px solid #ced4da;
+}
+.form-control:focus, .form-select:focus {
+    border-color: var(--brand-primary);
+    box-shadow: 0 0 0 3px rgba(0, 87, 146, 0.15);
+}
+
+/* 3. --- NUEVO: Navbar de "Vidrio" (Glassmorphism) --- */
+.navbar-brand-custom {
+    /* Usamos el 'sticky-top' de Bootstrap, pero lo personalizamos */
+    background-color: rgba(255, 255, 255, 0.85); /* Blanco semi-transparente */
+    backdrop-filter: blur(10px); /* El efecto "vidrio esmerilado" */
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(224, 224, 224, 0.5); /* Borde sutil */
+    box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+}
+
+/* 4. Tarjetas de KPI (Las que ya tenías, pero refinadas) */
+.card-kpi {
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 5px 20px rgba(42, 51, 66, 0.07);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border-left: 5px solid var(--brand-secondary);
+    overflow: hidden;
+    background-color: #ffffff; /* Asegurar fondo blanco */
+}
+.card-kpi:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(42, 51, 66, 0.1);
+}
+/* ... (El resto de estilos de .card-kpi que ya tenías) ... */
+.card-kpi .card-title { font-size: 0.9rem; font-weight: 600; color: var(--text-light); text-transform: uppercase; }
+.card-kpi .kpi-value { font-size: 2.25rem; font-weight: 700; color: var(--text-dark); }
+.card-kpi .kpi-icon { font-size: 3rem; color: var(--brand-primary); opacity: 0.1; position: absolute; right: 20px; top: 50%; transform: translateY(-50%); }
+.card-kpi.border-primary { border-left-color: var(--brand-primary); }
+.card-kpi.border-warning { border-left-color: var(--brand-accent); }
+.card-kpi.border-success { border-left-color: #198754; }
+.card-kpi.border-info { border-left-color: #0dcaf0; }
+
+
+/* 5. --- NUEVO: Estilo de "Tarjetas Flotantes" para Tablas --- */
+/* Queremos que las filas de la tabla parezcan tarjetas individuales */
+.table {
+    border-collapse: separate; /* Clave para las filas flotantes */
+    border-spacing: 0 10px; /* Espacio vertical entre filas */
+    background-color: transparent;
+}
+.table thead th {
+    border: none;
+    font-weight: 600;
+    color: var(--text-light);
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    padding-left: 20px;
+}
+.table tbody tr {
+    background-color: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(42, 51, 66, 0.05);
+    transition: all 0.2s ease-in-out;
+}
+/* Quitar bordes por defecto de Bootstrap */
+.table td, .table th {
+    border: none;
+}
+.table tbody td {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+    vertical-align: middle;
+}
+/* Redondear esquinas de la primera y última celda */
+.table tbody tr td:first-child {
+    border-top-left-radius: 10px;
+    border-bottom-left-radius: 10px;
+    padding-left: 20px;
+}
+.table tbody tr td:last-child {
+    border-top-right-radius: 10px;
+    border-bottom-right-radius: 10px;
+    padding-right: 20px;
+}
+/* Efecto hover sutil */
+.table-hover > tbody > tr:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(42, 51, 66, 0.1);
+    background-color: #ffffff; /* Mantener blanco al hacer hover */
+    color: var(--text-dark);
+}
+
+/* 6. --- NUEVO: Modales de Vidrio --- */
+.modal-content {
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+.modal-header {
+    background-color: rgba(248, 249, 250, 0.8); /* Gris claro semi-transparente */
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    border-bottom: 1px solid rgba(224, 224, 224, 0.5);
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+}

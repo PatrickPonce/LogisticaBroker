@@ -22,69 +22,57 @@
 
     <div class="row mb-4">
         <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-primary shadow h-100 py-2 border-0 border-start border-4 border-primary">
-                <div class="card-body">
+            <div class="card card-kpi border-primary shadow-sm h-100 py-2">
+                <div class="card-body position-relative">
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1 fw-bold">
-                                Despachos Activos</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800 fw-bold fs-2">@Model.ActiveDispatches</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="bi bi-truck fs-1 text-gray-300 text-primary opacity-50"></i>
+                            <div class="card-title">Despachos Activos</div>
+                            <div class="kpi-value" id="kpi-active-dispatches">@Model.ActiveDispatches</div>
                         </div>
                     </div>
+                    <i class="bi bi-truck kpi-icon"></i>
                 </div>
             </div>
         </div>
 
         <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-warning shadow h-100 py-2 border-0 border-start border-4 border-warning">
-                <div class="card-body">
+            <div class="card card-kpi border-warning shadow-sm h-100 py-2">
+                <div class="card-body position-relative">
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1 fw-bold">
-                                En Aduana</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800 fw-bold fs-2">@Model.DispatchesInCustoms</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="bi bi-building-exclamation fs-1 text-warning opacity-50"></i>
+                            <div class="card-title">En Aduana</div>
+                            <div class="kpi-value" id="kpi-in-customs">@Model.DispatchesInCustoms</div>
                         </div>
                     </div>
+                    <i class="bi bi-building-exclamation kpi-icon"></i>
                 </div>
             </div>
         </div>
 
         <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-success shadow h-100 py-2 border-0 border-start border-4 border-success">
-                <div class="card-body">
+            <div class="card card-kpi border-success shadow-sm h-100 py-2">
+                <div class="card-body position-relative">
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1 fw-bold">
-                                Completados (Histórico)</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800 fw-bold fs-2">@Model.CompletedDispatches</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="bi bi-check-circle-fill fs-1 text-success opacity-50"></i>
+                            <div class="card-title">Completados</div>
+                            <div class="kpi-value" id="kpi-completed">@Model.CompletedDispatches</div>
                         </div>
                     </div>
+                    <i class="bi bi-check-circle-fill kpi-icon"></i>
                 </div>
             </div>
         </div>
 
         <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-info shadow h-100 py-2 border-0 border-start border-4 border-info">
-                <div class="card-body">
+            <div class="card card-kpi border-info shadow-sm h-100 py-2">
+                <div class="card-body position-relative">
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1 fw-bold">
-                                Total Clientes</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800 fw-bold fs-2">@Model.TotalClients</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="bi bi-people-fill fs-1 text-info opacity-50"></i>
+                            <div class="card-title">Total Clientes</div>
+                            <div class="kpi-value" id="kpi-total-clients">@Model.TotalClients</div>
                         </div>
                     </div>
+                    <i class="bi bi-people-fill kpi-icon"></i>
                 </div>
             </div>
         </div>
@@ -352,6 +340,55 @@
             // Escuchar clics en las pestañas para cargar su contenido
             document.getElementById('pending-tab').addEventListener('click', () => loadPendingTasks(searchInput.value));
             document.getElementById('completed-tab').addEventListener('click', () => loadCompletedTasks(searchInput.value));
+
+
+            // --- ¡NUEVA SECCIÓN DE ANIMACIÓN! ---
+            
+            // 1. Animación de "Fade In" para las tarjetas
+            // Usamos 'translateY' para que suban sutilmente
+            anime({
+                targets: '.card-kpi',
+                translateY: [20, 0],
+                opacity: [0, 1],
+                delay: anime.stagger(100) // 100ms de retraso entre cada tarjeta
+            });
+
+            // 2. Animación de "Contador" para los números
+            // Usamos los IDs que pusimos en el HTML
+            anime({
+                targets: '#kpi-active-dispatches',
+                innerHTML: [0, @Model.ActiveDispatches], // Animar de 0 al valor real
+                round: 1, // Redondear a número entero
+                duration: 1500,
+                easing: 'easeOutExpo'
+            });
+
+            anime({
+                targets: '#kpi-in-customs',
+                innerHTML: [0, @Model.DispatchesInCustoms],
+                round: 1,
+                duration: 1500,
+                delay: 200, // Pequeño retraso
+                easing: 'easeOutExpo'
+            });
+            
+            anime({
+                targets: '#kpi-completed',
+                innerHTML: [0, @Model.CompletedDispatches],
+                round: 1,
+                duration: 1500,
+                delay: 400,
+                easing: 'easeOutExpo'
+            });
+
+            anime({
+                targets: '#kpi-total-clients',
+                innerHTML: [0, @Model.TotalClients],
+                round: 1,
+                duration: 1500,
+                delay: 600,
+                easing: 'easeOutExpo'
+            });
 
 
             // --- FUNCIÓN PARA CARGAR TAREAS PENDIENTES ---
