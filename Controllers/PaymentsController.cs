@@ -25,8 +25,9 @@ namespace LogisticaBroker.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(
-            [Bind("DispatchId,Amount,PaidDate,Notes")] Payment payment, 
-            IFormFile comprobanteFile) // <--- El archivo del comprobante
+        // Añade "Concept" a la lista
+        [Bind("DispatchId,Amount,PaidDate,Notes,Concept")] Payment payment, 
+        IFormFile comprobanteFile)
         {
             if (comprobanteFile == null || comprobanteFile.Length == 0)
             {
@@ -92,14 +93,42 @@ namespace LogisticaBroker.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
         {
+            // 1. Encontrar el registro del pago
             var payment = await _context.Payments.FindAsync(id);
-            if (payment != null)
+            if (payment == null)
             {
-                _context.Payments.Remove(payment);
-                await _context.SaveChangesAsync();
-                TempData["Success"] = "Pago eliminado.";
+                TempData["Error"] = "No se encontró el pago a eliminar.";
+                return RedirectToAction("Index", "Home");
             }
-            return RedirectToAction("Details", "Dispatches", new { id = payment?.DispatchId });
+
+            int dispatchId = payment.DispatchId;
+            int? documentId = payment.DocumentId;
+
+            // 2. Eliminar el registro del pago
+            _context.Payments.Remove(payment);
+
+            // 3. Eliminar el documento asociado (comprobante)
+            if (documentId.HasValue)
+            {
+                var document = await _context.Documents.FindAsync(documentId.Value);
+                if (document != null)
+                {
+                    // 3a. Borrar el archivo físico
+                    var physicalPath = Path.Combine(_env.WebRootPath, document.FilePath.TrimStart('/'));
+                    if (System.IO.File.Exists(physicalPath))
+                    {
+                        System.IO.File.Delete(physicalPath);
+                    }
+                    // 3b. Borrar el registro del documento
+                    _context.Documents.Remove(document);
+                }
+            }
+
+            // 4. Guardar cambios
+            await _context.SaveChangesAsync();
+            TempData["Success"] = "Pago/Comprobante eliminado correctamente.";
+
+            return RedirectToAction("Details", "Dispatches", new { id = dispatchId });
         }
     }
 }

@@ -203,16 +203,16 @@ namespace LogisticaBroker.Controllers
             if (!string.IsNullOrEmpty(filter))
             {
                 filter = filter.ToLower();
-                query = query.Where(e => 
-                    e.Title.ToLower().Contains(filter) || 
+                query = query.Where(e =>
+                    e.Title.ToLower().Contains(filter) ||
                     (e.Dispatch != null && e.Dispatch.DispatchNumber.ToLower().Contains(filter))
                 );
             }
 
             // Ordenar por las más recientes primero y limitar
             var tasks = await query
-                .OrderByDescending(e => e.Start) 
-                .Take(10) 
+                .OrderByDescending(e => e.Start)
+                .Take(10)
                 .Select(e => new
                 {
                     id = e.Id,
@@ -225,6 +225,25 @@ namespace LogisticaBroker.Controllers
                 .ToListAsync();
 
             return Json(tasks);
+        }
+        
+        // POST: /Calendar/DeleteEvent/5
+        [HttpPost]
+        [Authorize(Roles = Roles.Admin)] // Solo los Admins pueden eliminar
+        public async Task<IActionResult> DeleteEvent(int id)
+        {
+            var evt = await _context.CalendarEvents.FindAsync(id);
+            if (evt == null) 
+            {
+                return NotFound(new { success = false, message = "Evento no encontrado." });
+            }
+
+            // Aquí podrías añadir lógica extra si es necesario (ej. verificar permisos)
+
+            _context.CalendarEvents.Remove(evt);
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true, message = "Evento eliminado." });
         }
 
     }

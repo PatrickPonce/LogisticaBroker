@@ -421,7 +421,7 @@
                                             <th>Monto Costo</th>
                                             <th>Vencimiento</th>
                                             <th>Factura Adjunta</th>
-                                        </tr>
+                                            <th class="text-end">Acciones</th> </tr>
                                     </thead>
                                     <tbody>
                                         @if (Model.Costs != null && Model.Costs.Any())
@@ -444,10 +444,18 @@
                                                             </div>
                                                         }
                                                     </td>
+                                                    
+                                                    <td class="text-end">
+                                                        <form asp-controller="DispatchCosts" asp-action="Delete" asp-route-id="@cost.Id" method="post" onsubmit="return confirm('¿Eliminar este Costo? Esta acción también borrará el archivo adjunto.');">
+                                                            <button type="submit" class="btn btn-sm btn-outline-danger border-0" title="Eliminar">
+                                                                <i class="bi bi-trash"></i>
+                                                            </button>
+                                                        </form>
+                                                    </td>
                                                 </tr>
                                             }
                                         } else {
-                                            <tr><td colspan="4" class="text-center text-muted fst-italic py-3">No hay costos registrados.</td></tr>
+                                            <tr><td colspan="5" class="text-center text-muted fst-italic py-3">No hay costos registrados.</td></tr>
                                         }
                                     </tbody>
                                 </table>
@@ -466,7 +474,7 @@
                                             <th>Fecha de Pago</th>
                                             <th>Notas</th>
                                             <th>Comprobante Adjunto</th>
-                                        </tr>
+                                            <th class="text-end">Acciones</th> </tr>
                                     </thead>
                                     <tbody>
                                         @if (Model.Payments != null && Model.Payments.Any())
@@ -489,10 +497,18 @@
                                                             </div>
                                                         }
                                                     </td>
+
+                                                    <td class="text-end">
+                                                        <form asp-controller="Payments" asp-action="Delete" asp-route-id="@pay.Id" method="post" onsubmit="return confirm('¿Eliminar este Pago? Esta acción también borrará el comprobante adjunto.');">
+                                                            <button type="submit" class="btn btn-sm btn-outline-danger border-0" title="Eliminar">
+                                                                <i class="bi bi-trash"></i>
+                                                            </button>
+                                                        </form>
+                                                    </td>
                                                 </tr>
                                             }
                                         } else {
-                                            <tr><td colspan="4" class="text-center text-muted fst-italic py-3">No hay pagos registrados.</td></tr>
+                                            <tr><td colspan="5" class="text-center text-muted fst-italic py-3">No hay pagos registrados.</td></tr>
                                         }
                                     </tbody>
                                 </table>
@@ -543,6 +559,54 @@
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                         <button type="submit" class="btn btn-danger">Guardar Costo</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="paymentModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title"><i class="bi bi-receipt me-2"></i>Registrar Comprobante de Pago</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                
+                <form asp-controller="Payments" asp-action="Create" method="post" enctype="multipart/form-data">
+                    <div class="modal-body">
+                        <input type="hidden" name="DispatchId" value="@Model.Id" />
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Concepto del Pago *</label>
+                            <select name="Concept" class="form-select" asp-items="Html.GetEnumSelectList<PaymentType>()" required></select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Monto Pagado (USD) *</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" name="Amount" class="form-control" step="0.01" min="0.01" required placeholder="800.00" />
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Fecha de Pago *</label>
+                            <input type="date" name="PaidDate" class="form-control" required />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Comprobante (Archivo) *</label>
+                            <input type="file" name="comprobanteFile" class="form-control" required />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Notas</label>
+                            <textarea name="Notes" class="form-control" rows="2" placeholder="Ej: Pago parcial, transferencia BCP..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-success">Guardar Pago</button>
                     </div>
                 </form>
             </div>
