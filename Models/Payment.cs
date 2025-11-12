@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using LogisticaBroker.Models.Enums;
 // Ya no necesitamos los Enums de PaymentType o PaymentStatus aquí
 // using LogisticaBroker.Models.Enums; 
 
@@ -44,5 +45,8 @@ namespace LogisticaBroker.Models
         // public PaymentType PaymentType { get; set; }
         // public PaymentStatus Status { get; set; } = PaymentStatus.Pending;
         // public DateTime? DueDate { get; set; }
+        [Required]
+        [Display(Name = "Concepto del Pago")]
+        public PaymentType Concept { get; set; }
     }
 }

@@ -212,6 +212,10 @@
                     </dl>
                 </div>
                 <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-outline-danger me-auto" id="btnDeleteFromModal">
+                        <i class="bi bi-trash me-1"></i> Eliminar Tarea
+                    </button>
+                    
                     <button type="button" class="btn btn-success" id="btnCompleteFromModal">
                         <i class="bi bi-check2-square me-2"></i>Marcar como Hecho
                     </button>
@@ -295,6 +299,7 @@
             var calendarEl = document.getElementById('calendar');
             var eventModal = new bootstrap.Modal(document.getElementById('eventModal'));
             var taskDetailsModal = new bootstrap.Modal(document.getElementById('taskDetailsModal'));
+            var searchInput = document.getElementById('taskSearch');
 
             // --- CALENDARIO ---
             var calendar = new FullCalendar.Calendar(calendarEl, {
@@ -302,16 +307,18 @@
                 locale: 'es',
                 headerToolbar: { left: 'prev,next', center: 'title', right: 'today' },
                 height: 'auto',
-                events: '/Calendar/GetEvents', // Endpoint que trae PENDIENTES
+                events: '/Calendar/GetEvents',
                 dateClick: function(info) { openCreateModal(info.dateStr); },
                 eventClick: function(info) {
+                    // Al hacer clic en el calendario, se abre el modal de detalles
                     showTaskDetails({
+                        id: info.event.id,
                         title: info.event.title,
                         start: info.event.startStr,
                         end: info.event.endStr,
                         description: info.event.extendedProps.description,
                         dispatchNumber: info.event.extendedProps.dispatchNumber,
-                        id: info.event.id
+                        dispatchId: info.event.extendedProps.dispatchId
                     });
                 }
             });
@@ -320,82 +327,27 @@
             // ==========================================
             // === LÓGICA DE AGENDA LATERAL (Tabs) ===
             // ==========================================
-            const searchInput = document.getElementById('taskSearch');
-
-            // Cargar datos de la pestaña activa al inicio
+            
             loadPendingTasks();
+            loadCompletedTasks();
 
-            // Escuchar el buscador
             let searchTimeout;
             searchInput.addEventListener('input', function(e) {
                 clearTimeout(searchTimeout);
                 searchTimeout = setTimeout(() => {
                     const filter = e.target.value;
-                    // Recargar ambas listas para que los contadores estén correctos
                     loadPendingTasks(filter);
                     loadCompletedTasks(filter);
                 }, 300);
             });
 
-            // Escuchar clics en las pestañas para cargar su contenido
             document.getElementById('pending-tab').addEventListener('click', () => loadPendingTasks(searchInput.value));
             document.getElementById('completed-tab').addEventListener('click', () => loadCompletedTasks(searchInput.value));
-
-
-            // --- ¡NUEVA SECCIÓN DE ANIMACIÓN! ---
-            
-            // 1. Animación de "Fade In" para las tarjetas
-            // Usamos 'translateY' para que suban sutilmente
-            anime({
-                targets: '.card-kpi',
-                translateY: [20, 0],
-                opacity: [0, 1],
-                delay: anime.stagger(100) // 100ms de retraso entre cada tarjeta
-            });
-
-            // 2. Animación de "Contador" para los números
-            // Usamos los IDs que pusimos en el HTML
-            anime({
-                targets: '#kpi-active-dispatches',
-                innerHTML: [0, @Model.ActiveDispatches], // Animar de 0 al valor real
-                round: 1, // Redondear a número entero
-                duration: 1500,
-                easing: 'easeOutExpo'
-            });
-
-            anime({
-                targets: '#kpi-in-customs',
-                innerHTML: [0, @Model.DispatchesInCustoms],
-                round: 1,
-                duration: 1500,
-                delay: 200, // Pequeño retraso
-                easing: 'easeOutExpo'
-            });
-            
-            anime({
-                targets: '#kpi-completed',
-                innerHTML: [0, @Model.CompletedDispatches],
-                round: 1,
-                duration: 1500,
-                delay: 400,
-                easing: 'easeOutExpo'
-            });
-
-            anime({
-                targets: '#kpi-total-clients',
-                innerHTML: [0, @Model.TotalClients],
-                round: 1,
-                duration: 1500,
-                delay: 600,
-                easing: 'easeOutExpo'
-            });
-
 
             // --- FUNCIÓN PARA CARGAR TAREAS PENDIENTES ---
             function loadPendingTasks(filter = '') {
                 const taskList = document.getElementById('taskListPending');
-                if (!taskList) return; // Si la vista no está activa, no hacer nada
-                
+                if (!taskList) return; 
                 taskList.innerHTML = '<div class="text-center py-4 text-muted"><div class="spinner-border spinner-border-sm text-primary" role="status"></div></div>';
                 
                 fetch('/Calendar/GetUpcomingTasks?filter=' + encodeURIComponent(filter))
@@ -403,40 +355,42 @@
                     .then(data => {
                         taskList.innerHTML = '';
                         document.getElementById('pending-count').innerText = data.length;
-
                         if (data.length === 0) {
                             taskList.innerHTML = `<div class="text-center py-4 text-muted"><i class="bi bi-clipboard-check fs-1 d-block mb-2 opacity-25"></i>No hay tareas pendientes.</div>`;
                             return;
                         }
-
                         data.forEach(task => {
-                            const taskDate = new Date(task.start);
-                            const formattedDate = taskDate.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute:'2-digit' });
+                            // ... (resto de la lógica de creación de 'item') ...
                             const item = document.createElement('div');
                             item.className = 'list-group-item list-group-item-action p-3 border-start border-4 mb-2 shadow-sm';
                             item.style.borderLeftColor = task.color + '!important';
                             item.dataset.task = JSON.stringify(task);
+                            
+                            const taskDate = new Date(task.start);
+                            const formattedDate = taskDate.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute:'2-digit' });
 
                             item.innerHTML = `
-                                <div class="d-flex w-100 justify-content-between align-items-start">
+                                <div class="d-flex w-100 justify-content-between align-items-center">
                                     <div class="form-check flex-grow-1">
                                         <input class="form-check-input mt-1" type="checkbox" onchange="toggleTaskComplete(${task.id})" style="cursor: pointer;">
-                                        <div class="ms-2">
+                                        <div class="ms-2" style="max-width: 90%;">
                                             <label class="form-check-label fw-bold ${task.isOverdue ? 'text-danger' : 'text-dark'}">${task.title}</label>
                                             <div class="text-muted small"><i class="bi bi-clock me-1"></i>${formattedDate}</div>
-                                            
                                             ${task.dispatchId ? 
-                                            `<a href="/Dispatches/Details/${task.dispatchId}" 
-                                                target="_blank" 
-                                                class="badge bg-light text-primary border mt-1 text-decoration-none">
+                                            `<a href="/Dispatches/Details/${task.dispatchId}" target="_blank" class="badge bg-light text-primary border mt-1 text-decoration-none">
                                                 <i class="bi bi-box-seam me-1"></i>${task.dispatchNumber}
-                                            </a>` 
+                                             </a>` 
                                             : ''}
-                                            </div>
+                                        </div>
                                     </div>
-                                    <button class="btn btn-sm btn-outline-secondary border-0" onclick='openDetailFromButton(this)' title="Ver detalles">
-                                        <i class="bi bi-eye-fill"></i>
-                                    </button>
+                                    <div class="btn-group-vertical btn-group-sm" style="margin-left: 5px;">
+                                        <button class="btn btn-outline-secondary border-0" onclick='openDetailFromButton(this)' title="Ver detalles">
+                                            <i class="bi bi-eye-fill"></i>
+                                        </button>
+                                        <button class="btn btn-outline-danger border-0" onclick="deleteTask(${task.id})" title="Eliminar Tarea">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
                                 </div>`;
                             taskList.appendChild(item);
                         });
@@ -447,7 +401,6 @@
             function loadCompletedTasks(filter = '') {
                 const taskList = document.getElementById('taskListCompleted');
                 if (!taskList) return;
-                
                 taskList.innerHTML = '<div class="text-center py-4 text-muted"><div class="spinner-border spinner-border-sm text-primary" role="status"></div></div>';
                 
                 fetch('/Calendar/GetCompletedTasks?filter=' + encodeURIComponent(filter))
@@ -455,53 +408,84 @@
                     .then(data => {
                         taskList.innerHTML = '';
                         document.getElementById('completed-count').innerText = data.length;
-
                         if (data.length === 0) {
-                            taskList.innerHTML = `<div class="text-center py-4 text-muted"><i class="bi bi-check-all fs-1 d-block mb-2 opacity-25"></i>No hay tareas completadas (últimos 10).</div>`;
+                            taskList.innerHTML = `<div class="text-center py-4 text-muted"><i class="bi bi-check-all fs-1 d-block mb-2 opacity-25"></i>No hay tareas completadas.</div>`;
                             return;
                         }
-
                         data.forEach(task => {
-                            const taskDate = new Date(task.start);
-                            const formattedDate = taskDate.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+                            // ... (resto de la lógica de creación de 'item') ...
                             const item = document.createElement('div');
                             item.className = 'list-group-item p-3 bg-light text-muted';
-                            item.dataset.task = JSON.stringify(task); // Sigue pudiendo ver detalles
+                            item.dataset.task = JSON.stringify(task);
+                            
+                            const taskDate = new Date(task.start);
+                            const formattedDate = taskDate.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
 
                             item.innerHTML = `
-                                <div class="d-flex w-100 justify-content-between align-items-start">
+                                <div class="d-flex w-100 justify-content-between align-items-center">
                                     <div class="form-check flex-grow-1">
                                         <input class="form-check-input mt-1" type="checkbox" onchange="toggleTaskComplete(${task.id})" checked style="cursor: pointer;">
-                                        <div class="ms-2">
+                                        <div class="ms-2" style="max-width: 90%;">
                                             <label class="form-check-label text-decoration-line-through">${task.title}</label>
                                             <div class="small"><i class="bi bi-calendar-check me-1"></i>${formattedDate}</div>
-
                                             ${task.dispatchId ? 
-                                            `<a href="/Dispatches/Details/${task.dispatchId}" 
-                                                target="_blank" 
-                                                class="badge bg-white text-dark border mt-1 text-decoration-none">
+                                            `<a href="/Dispatches/Details/${task.dispatchId}" target="_blank" class="badge bg-white text-dark border mt-1 text-decoration-none">
                                                 ${task.dispatchNumber}
-                                            </a>` 
+                                             </a>` 
                                             : ''}
-                                            </div>
+                                        </div>
                                     </div>
-                                    <button class="btn btn-sm btn-outline-secondary border-0" onclick='openDetailFromButton(this)' title="Ver detalles"><i class="bi bi-eye"></i></button>
+                                    <div class="btn-group-vertical btn-group-sm" style="margin-left: 5px;">
+                                        <button class="btn btn-outline-secondary border-0" onclick='openDetailFromButton(this)' title="Ver detalles">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                        <button class="btn btn-outline-danger border-0" onclick="deleteTask(${task.id})" title="Eliminar Tarea">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
                                 </div>`;
                             taskList.appendChild(item);
                         });
                     });
             }
 
+            // ==========================================
+            // === FUNCIONES GLOBALES Y MODALES ===
+            // ==========================================
 
-            // --- FUNCIONES GLOBALES Y MODALES ---
+            // --- NUEVA FUNCIÓN GLOBAL PARA ELIMINAR ---
+            window.deleteTask = function(id) {
+                if (!confirm('¿Estás seguro de que deseas eliminar esta tarea permanentemente?')) {
+                    return;
+                }
 
+                // Usamos la URL /Calendar/DeleteEvent/{id}
+                fetch('/Calendar/DeleteEvent/' + id, { 
+                    method: 'POST',
+                    headers: {
+                        // Si tienes AntiForgeryToken activado globalmente, necesitarías añadir el token aquí
+                    }
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        // Recargar todo para que desaparezca
+                        loadPendingTasks(searchInput.value);
+                        loadCompletedTasks(searchInput.value);
+                        calendar.refetchEvents();
+                    } else {
+                        alert('Error al eliminar: ' + data.message);
+                    }
+                })
+                .catch(error => console.error('Error eliminando tarea:', error));
+            };
+            
             // Marcar/Desmarcar Tarea
             window.toggleTaskComplete = function(id) {
                 fetch('/Calendar/ToggleComplete?id=' + id, { method: 'POST' })
                     .then(r => r.json())
                     .then(data => {
                         if (data.success) {
-                            // Recargar AMBAS listas y el calendario
                             loadPendingTasks(searchInput.value);
                             loadCompletedTasks(searchInput.value);
                             calendar.refetchEvents();
@@ -523,11 +507,20 @@
                 document.getElementById('detailDispatch').innerText = task.dispatchNumber || 'Ninguno';
                 document.getElementById('detailDescription').innerText = task.description || 'Sin descripción adicional.';
                 
+                // Configurar el botón de "Completar"
                 var btnComplete = document.getElementById('btnCompleteFromModal');
                 btnComplete.onclick = function() {
                     toggleTaskComplete(task.id);
                     taskDetailsModal.hide();
                 };
+
+                // NUEVO: Configurar el botón de "Eliminar" del modal
+                var btnDelete = document.getElementById('btnDeleteFromModal');
+                btnDelete.onclick = function() {
+                    deleteTask(task.id);
+                    taskDetailsModal.hide();
+                };
+
                 taskDetailsModal.show();
             }
 
@@ -543,7 +536,7 @@
             // Cargar Despachos en Modal
             var dispatchesLoaded = false;
             function loadActiveDispatches() {
-                 if (dispatchesLoaded) return; // Solo cargar una vez
+                 if (dispatchesLoaded) return;
                  fetch('@Url.Action("GetActiveDispatches", "Calendar")')
                     .then(r => r.json())
                     .then(data => {
@@ -582,10 +575,10 @@
                 }).then(r => r.json()).then(data => {
                     if (data.success) {
                         calendar.refetchEvents();
-                        loadPendingTasks(searchInput.value); // Recargar pendientes
+                        loadPendingTasks(searchInput.value);
                         eventModal.hide();
                     } else { alert('Error: ' + data.message); }
-                }).finally(() => { this.disabled = false; });
+                }).finally(() => { this.disabled = false; this.innerText = 'Guardar Evento'; });
             });
         });
     </script>
