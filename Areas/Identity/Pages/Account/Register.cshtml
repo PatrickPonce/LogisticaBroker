@@ -1,0 +1,76 @@
+﻿@page
+@model RegisterModel
+@{
+    ViewData["Title"] = "Register";
+    Layout = null; // <-- IMPORTANTE: Quitamos el layout principal
+}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - LogisticaBroker</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Montserrat:400,700" />
+    <link rel="stylesheet" href="~/css/login-style.css" />
+</head>
+<body>
+
+    <section class="user">
+        <div class="user_options-container">
+            <div class="user_options-text">
+                <div class="user_options-unregistered">
+                    <h2 class="user_unregistered-title">¿No tienes una cuenta?</h2>
+                    <p class="user_unregistered-text">Regístrate para acceder a todas las funcionalidades de nuestra plataforma.</p>
+                    <button class="user_unregistered-signup" id="signup-button">Registrarse</button>
+                </div>
+
+                <div class="user_options-registered">
+                    <h2 class="user_registered-title">¿Ya tienes una cuenta?</h2>
+                    <p class="user_registered-text">Inicia sesión para continuar donde lo dejaste.</p>
+                    <button class="user_registered-login" id="login-button">Login</button>
+                </div>
+            </div>
+
+            <div class="user_options-forms bounceLeft" id="user_options-forms">
+                <div class="user_forms-login">
+                     <h2 class="forms_title">Login</h2>
+                    <form asp-page="./Login" asp-route-returnUrl="@Model.ReturnUrl" method="get">
+                         <fieldset class="forms_fieldset">
+                            <div class="forms_field">
+                               <p>Haz clic en el botón de abajo para ir a la página de inicio de sesión.</p>
+                            </div>
+                        </fieldset>
+                        <div class="forms_buttons">
+                            <input type="submit" value="Ir a Login" class="forms_buttons-action">
+                        </div>
+                    </form>
+                </div>
+                <div class="user_forms-signup">
+                    <h2 class="forms_title">Registrarse</h2>
+                    <form id="registerForm" asp-route-returnUrl="@Model.ReturnUrl" method="post">
+                        <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
+                        <fieldset class="forms_fieldset">
+                             <div class="forms_field">
+                                <input asp-for="Input.Email" class="forms_field-input" placeholder="Email" required />
+                            </div>
+                            <div class="forms_field">
+                                <input asp-for="Input.Password" class="forms_field-input" placeholder="Contraseña" required />
+                            </div>
+                            <div class="forms_field">
+                                <input asp-for="Input.ConfirmPassword" class="forms_field-input" placeholder="Confirmar Contraseña" required />
+                            </div>
+                        </fieldset>
+                        <div class="forms_buttons">
+                            <input type="submit" value="Crear Cuenta" class="forms_buttons-action">
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script src="~/js/login-script.js"></script>
+    <partial name="_ValidationScriptsPartial" />
+</body>
+</html>
