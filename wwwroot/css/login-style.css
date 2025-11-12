@@ -10,7 +10,7 @@ body {
   margin: 0;
 }
 
-button {
+button, input[type="submit"] {
   background-color: transparent;
   padding: 0;
   border: 0;
@@ -25,30 +25,12 @@ input {
   outline: 0;
 }
 
-input[type="submit"] {
-  cursor: pointer;
-}
-
 input::placeholder {
   font-size: 0.85rem;
   font-family: 'Montserrat', sans-serif;
   font-weight: 300;
   letter-spacing: 0.1rem;
   color: #ccc;
-}
-
-/* Texto de error/alerta en color celeste personalizado */
-.text-celeste {
-  color: #00bcd4; /* celeste */
-  font-weight: 500;
-  margin-bottom: 8px;
-}
-
-/* Texto de error en negro (clase para mensajes de validación específicos) */
-.text-negro {
-  color: #000000; /* negro */
-  font-weight: 500;
-  margin-bottom: 8px;
 }
 
 /* Contenedor Principal y Fondo */
@@ -62,6 +44,80 @@ input::placeholder {
   background-size: cover;
   background-position: center;
 }
+
+/* --- ESTILOS GENERALES PARA FORMULARIOS --- */
+/* (Ahora funcionarán en cualquier contenedor) */
+
+.forms_title {
+    margin-bottom: 45px;
+    font-size: 1.5rem;
+    font-weight: 500;
+    line-height: 1em;
+    text-transform: uppercase;
+    color: #00bcd4; /* Celeste */
+    letter-spacing: 0.1rem;
+}
+
+.forms_field:not(:last-of-type) {
+    margin-bottom: 20px;
+}
+
+.forms_field-input {
+    width: 100%;
+    border-bottom: 1px solid #ccc;
+    padding: 6px 20px 6px 6px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 1rem;
+    font-weight: 300;
+    color: #666;
+    letter-spacing: 0.1rem;
+    transition: border-color 0.2s ease-in-out;
+}
+
+.forms_field-input:focus {
+    border-color: #00bcd4; /* Celeste focus */
+}
+
+.forms_buttons {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 35px;
+}
+
+.forms_buttons-forgot {
+    font-family: 'Montserrat', sans-serif;
+    letter-spacing: 0.1rem;
+    color: #ccc;
+    text-decoration: underline;
+    transition: color 0.2s ease-in-out;
+}
+
+.forms_buttons-forgot:hover {
+    color: #aaa;
+}
+
+button.forms_buttons-action,
+input[type="submit"].forms_buttons-action {
+    background-color: #00bcd4; /* Celeste */
+    border-radius: 3px;
+    padding: 10px 35px;
+    font-size: 1rem;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 300;
+    color: #fff;
+    text-transform: uppercase;
+    letter-spacing: 0.1rem;
+    transition: background-color 0.2s ease-in-out;
+}
+
+button.forms_buttons-action:hover,
+input[type="submit"].forms_buttons-action:hover {
+    background-color: #009bb3; /* Celeste oscuro */
+}
+
+
+/* --- LOGIN/REGISTER CON PANELES DESLIZANTES --- */
 
 .user_options-container {
   position: relative;
@@ -77,7 +133,6 @@ input::placeholder {
   border-radius: 3px;
 }
 
-/* Paneles de Texto (Izquierda y Derecha) */
 .user_options-registered,
 .user_options-unregistered {
   width: 50%;
@@ -118,7 +173,6 @@ input::placeholder {
   background-color: #00bcd4;
 }
 
-/* Contenedor de Formularios */
 .user_options-forms {
   position: absolute;
   top: 50%;
@@ -131,76 +185,6 @@ input::placeholder {
   overflow: hidden;
   transform: translate3d(100%, -50%, 0);
   transition: transform 0.4s ease-in-out;
-}
-
-.user_options-forms .user_forms-login {
-  transition: opacity 0.4s ease-in-out, visibility 0.4s ease-in-out;
-}
-
-.user_options-forms .forms_title {
-  margin-bottom: 45px;
-  font-size: 1.5rem;
-  font-weight: 500;
-  line-height: 1em;
-  text-transform: uppercase;
-  color: #00bcd4;
-  letter-spacing: 0.1rem;
-}
-
-.user_options-forms .forms_field:not(:last-of-type) {
-  margin-bottom: 20px;
-}
-
-.user_options-forms .forms_field-input {
-  width: 100%;
-  border-bottom: 1px solid #ccc;
-  padding: 6px 20px 6px 6px;
-  font-family: 'Montserrat', sans-serif;
-  font-size: 1rem;
-  font-weight: 300;
-  color: #666; /* darkgray */
-  letter-spacing: 0.1rem;
-  transition: border-color 0.2s ease-in-out;
-}
-
-.user_options-forms .forms_field-input:focus {
-  border-color: #00bcd4; /* celeste focus */
-}
-
-.user_options-forms .forms_buttons {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 35px;
-}
-
-.user_options-forms .forms_buttons-forgot {
-  font-family: 'Montserrat', sans-serif;
-  letter-spacing: 0.1rem;
-  color: #ccc;
-  text-decoration: underline;
-  transition: color 0.2s ease-in-out;
-}
-
-.user_options-forms .forms_buttons-forgot:hover {
-  color: #aaa; /* darkgray */
-}
-
-.user_options-forms .forms_buttons-action {
-  background-color: #00bcd4;
-  border-radius: 3px;
-  padding: 10px 35px;
-  font-size: 1rem;
-  font-family: 'Montserrat', sans-serif;
-  font-weight: 300;
-  color: #fff;
-  text-transform: uppercase;
-  letter-spacing: 0.1rem;
-  transition: background-color 0.2s ease-in-out;
-}
-
-.user_options-forms .forms_buttons-action:hover {
-  background-color: #009bb3; /* darker celeste */
 }
 
 .user_options-forms .user_forms-signup,
@@ -228,7 +212,63 @@ input::placeholder {
   visibility: visible;
 }
 
-/* Animaciones */
+
+/* --- CONTENEDOR SIMPLE (FORGOT PASSWORD, ETC.) --- */
+
+.user_form-container {
+    width: 100%;
+    max-width: 450px;
+    padding: 50px 40px;
+    background-color: white;
+    border-radius: 5px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+    text-align: center;
+}
+
+.user_form-container .forms_title {
+    margin-bottom: 25px;
+}
+
+.user_form-container .forms_buttons {
+    justify-content: center;
+}
+
+.user_form-container .forms_buttons-action {
+    width: 100%;
+}
+
+.auth-text {
+    margin-bottom: 30px;
+    color: #555;
+    line-height: 1.5em;
+}
+
+.forms_buttons-bottom-link {
+    margin-top: 25px;
+    font-size: 0.85rem;
+}
+
+.forms_buttons-bottom-link a {
+    color: #888;
+    text-decoration: none;
+    transition: color 0.2s ease-in-out;
+}
+
+.forms_buttons-bottom-link a:hover {
+    color: #00bcd4; /* Celeste */
+}
+
+/* Para los mensajes de validación de Identity */
+.text-danger {
+    color: #dc3545;
+    font-size: 0.8em;
+    text-align: left;
+    margin-top: 5px;
+}
+
+
+/* --- ANIMACIONES (SIN CAMBIOS) --- */
+
 .user_options-forms.bounceLeft {
   animation: bounceLeft 1s forwards;
 }
@@ -247,29 +287,16 @@ input::placeholder {
   animation: bounceRight 1s forwards;
 }
 
-/* Keyframes */
 @keyframes bounceLeft {
-  0% {
-    transform: translate3d(100%, -50%, 0);
-  }
-  50% {
-    transform: translate3d(-30px, -50%, 0);
-  }
-  100% {
-    transform: translate3d(0, -50%, 0);
-  }
+  0% { transform: translate3d(100%, -50%, 0); }
+  50% { transform: translate3d(-30px, -50%, 0); }
+  100% { transform: translate3d(0, -50%, 0); }
 }
 
 @keyframes bounceRight {
-  0% {
-    transform: translate3d(0, -50%, 0);
-  }
-  50% {
-    transform: translate3d(calc(100% + 30px), -50%, 0);
-  }
-  100% {
-    transform: translate3d(100%, -50%, 0);
-  }
+  0% { transform: translate3d(0, -50%, 0); }
+  50% { transform: translate3d(calc(100% + 30px), -50%, 0); }
+  100% { transform: translate3d(100%, -50%, 0); }
 }
 
 @keyframes showSignUp {
