@@ -2,6 +2,11 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using LogisticaBroker.Data;
 using LogisticaBroker.Models;
+// --- INICIO DE CAMBIOS ---
+using LogisticaBroker.Services; // Para encontrar MailSettings y EmailSender
+using Microsoft.AspNetCore.Identity.UI.Services; // La interfaz que Identity a veces usa
+// --- FIN DE CAMBIOS ---
+
 
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
@@ -13,7 +18,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(connectionString));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-builder.Services.AddDefaultIdentity<ApplicationUser>(options => 
+builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
     {
         options.SignIn.RequireConfirmedAccount = false; // Lo ponemos en false para facilitar pruebas locales
         options.Password.RequireDigit = false; // Opcional: relajar requisitos de password para desarrollo
@@ -25,6 +30,13 @@ builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
 builder.Services.AddControllersWithViews();
 
 builder.Services.AddScoped<LogisticaBroker.Services.NotificationService>();
+
+
+// --- CÓDIGO PARA EL SERVICIO DE CORREO ---
+builder.Services.Configure<MailSettings>(builder.Configuration.GetSection("MailSettings"));
+// Aquí usamos la interfaz personalizada que creamos en el paso 2
+builder.Services.AddTransient<LogisticaBroker.Services.IEmailSender, EmailSender>();
+// ------------------------------------------
 
 var app = builder.Build();
 
@@ -58,18 +70,18 @@ else
 }
 
 app.UseHttpsRedirection();
+app.UseStaticFiles(); // <--- Es buena práctica tener esto explícitamente
 app.UseRouting();
 
+// Ojo: UseAuthentication() debe ir antes de UseAuthorization()
+app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapStaticAssets();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}")
-    .WithStaticAssets();
+    pattern: "{controller=Home}/{action=Index}/{id?}");
 
-app.MapRazorPages()
-   .WithStaticAssets();
+app.MapRazorPages();
 
 app.Run();
