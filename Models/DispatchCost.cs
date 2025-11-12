@@ -12,11 +12,11 @@ namespace LogisticaBroker.Models
         public int DispatchId { get; set; }
         public Dispatch? Dispatch { get; set; }
 
-        [Required]
+        [Required(ErrorMessage = "Debe seleccionar un concepto.")]
         [Display(Name = "Concepto del Costo")]
         public PaymentType Concept { get; set; } // Re-usamos el Enum que ya tenías
 
-        [Required]
+        [Required(ErrorMessage = "El monto es obligatorio.")]
         [Column(TypeName = "decimal(18,2)")]
         [Display(Name = "Monto del Costo (USD)")]
         [Range(0.01, double.MaxValue)]

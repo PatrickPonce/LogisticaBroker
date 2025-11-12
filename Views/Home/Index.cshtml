@@ -292,6 +292,41 @@
         </div>
     </div>
 </div>
+<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1100">
+    <div id="pastDateToast" class="toast align-items-center text-white bg-danger border-0" 
+         role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                No se pueden agendar tareas en fechas pasadas.
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" 
+                    data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="deleteTaskModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="bi bi-exclamation-triangle-fill me-2"></i>Confirmar Eliminación</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Estás seguro de que deseas eliminar esta tarea permanentemente?</p>
+                <div class="bg-light border rounded p-2 text-dark fw-bold" id="deleteTaskName">
+                    </div>
+                <p class="text-danger small mt-3">Esta acción no se puede deshacer.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="btnConfirmDelete">
+                    <i class="bi bi-trash me-1"></i> Sí, Eliminar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 @section Scripts {
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -300,17 +335,22 @@
             var eventModal = new bootstrap.Modal(document.getElementById('eventModal'));
             var taskDetailsModal = new bootstrap.Modal(document.getElementById('taskDetailsModal'));
             var searchInput = document.getElementById('taskSearch');
+            
+            // --- NUEVO: INICIALIZAR EL MODAL DE ELIMINACIÓN Y TOAST ---
+            var deleteModalEl = document.getElementById('deleteTaskModal');
+            var deleteModal = new bootstrap.Modal(deleteModalEl); // Usar new bootstrap.Modal
+            var pastDateToastEl = document.getElementById('pastDateToast');
+            var pastDateToast = new bootstrap.Toast(pastDateToastEl, { delay: 3000 });
+            // --- FIN NUEVO ---
 
-            // --- CALENDARIO ---
+            // --- CALENDARIO (con dateClick actualizado) ---
             var calendar = new FullCalendar.Calendar(calendarEl, {
                 initialView: 'dayGridMonth',
                 locale: 'es',
                 headerToolbar: { left: 'prev,next', center: 'title', right: 'today' },
                 height: 'auto',
-                events: '/Calendar/GetEvents',
-                dateClick: function(info) { openCreateModal(info.dateStr); },
+                events: '/Calendar/GetEvents', 
                 eventClick: function(info) {
-                    // Al hacer clic en el calendario, se abre el modal de detalles
                     showTaskDetails({
                         id: info.event.id,
                         title: info.event.title,
@@ -320,6 +360,17 @@
                         dispatchNumber: info.event.extendedProps.dispatchNumber,
                         dispatchId: info.event.extendedProps.dispatchId
                     });
+                },
+                dateClick: function(info) {
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0); 
+                    const clickedDate = info.date;
+
+                    if (clickedDate < today) {
+                        pastDateToast.show(); 
+                    } else {
+                        openCreateModal(info.dateStr);
+                    }
                 }
             });
             calendar.render();
@@ -360,14 +411,12 @@
                             return;
                         }
                         data.forEach(task => {
-                            // ... (resto de la lógica de creación de 'item') ...
+                            const taskDate = new Date(task.start);
+                            const formattedDate = taskDate.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute:'2-digit' });
                             const item = document.createElement('div');
                             item.className = 'list-group-item list-group-item-action p-3 border-start border-4 mb-2 shadow-sm';
                             item.style.borderLeftColor = task.color + '!important';
                             item.dataset.task = JSON.stringify(task);
-                            
-                            const taskDate = new Date(task.start);
-                            const formattedDate = taskDate.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute:'2-digit' });
 
                             item.innerHTML = `
                                 <div class="d-flex w-100 justify-content-between align-items-center">
@@ -387,7 +436,7 @@
                                         <button class="btn btn-outline-secondary border-0" onclick='openDetailFromButton(this)' title="Ver detalles">
                                             <i class="bi bi-eye-fill"></i>
                                         </button>
-                                        <button class="btn btn-outline-danger border-0" onclick="deleteTask(${task.id})" title="Eliminar Tarea">
+                                        <button class="btn btn-outline-danger border-0" onclick="openDeleteConfirm(${task.id}, '${task.title.replace(/'/g, "\\'")}')" title="Eliminar Tarea">
                                             <i class="bi bi-trash"></i>
                                         </button>
                                     </div>
@@ -413,11 +462,9 @@
                             return;
                         }
                         data.forEach(task => {
-                            // ... (resto de la lógica de creación de 'item') ...
                             const item = document.createElement('div');
                             item.className = 'list-group-item p-3 bg-light text-muted';
                             item.dataset.task = JSON.stringify(task);
-                            
                             const taskDate = new Date(task.start);
                             const formattedDate = taskDate.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
 
@@ -439,7 +486,7 @@
                                         <button class="btn btn-outline-secondary border-0" onclick='openDetailFromButton(this)' title="Ver detalles">
                                             <i class="bi bi-eye"></i>
                                         </button>
-                                        <button class="btn btn-outline-danger border-0" onclick="deleteTask(${task.id})" title="Eliminar Tarea">
+                                        <button class="btn btn-outline-danger border-0" onclick="openDeleteConfirm(${task.id}, '${task.title.replace(/'/g, "\\'")}')" title="Eliminar Tarea">
                                             <i class="bi bi-trash"></i>
                                         </button>
                                     </div>
@@ -453,31 +500,35 @@
             // === FUNCIONES GLOBALES Y MODALES ===
             // ==========================================
 
-            // --- NUEVA FUNCIÓN GLOBAL PARA ELIMINAR ---
-            window.deleteTask = function(id) {
-                if (!confirm('¿Estás seguro de que deseas eliminar esta tarea permanentemente?')) {
-                    return;
-                }
+            // --- NUEVA FUNCIÓN: Abrir el modal de confirmación ---
+            window.openDeleteConfirm = function(id, title) {
+                document.getElementById('deleteTaskName').innerText = title;
+                document.getElementById('btnConfirmDelete').dataset.taskId = id;
+                deleteModal.show();
+            };
 
-                // Usamos la URL /Calendar/DeleteEvent/{id}
+            // --- NUEVO: Listener para el botón de confirmación final ---
+            document.getElementById('btnConfirmDelete').addEventListener('click', function() {
+                var id = this.dataset.taskId; 
+                deleteTask(id);
+            });
+            
+            // --- FUNCIÓN DE ELIMINACIÓN ACTUALIZADA (sin 'confirm') ---
+            window.deleteTask = function(id) {
+                deleteModal.hide(); // Ocultar el modal de confirmación
                 fetch('/Calendar/DeleteEvent/' + id, { 
-                    method: 'POST',
-                    headers: {
-                        // Si tienes AntiForgeryToken activado globalmente, necesitarías añadir el token aquí
-                    }
+                    method: 'POST'
                 })
                 .then(r => r.json())
                 .then(data => {
                     if (data.success) {
-                        // Recargar todo para que desaparezca
                         loadPendingTasks(searchInput.value);
                         loadCompletedTasks(searchInput.value);
                         calendar.refetchEvents();
                     } else {
                         alert('Error al eliminar: ' + data.message);
                     }
-                })
-                .catch(error => console.error('Error eliminando tarea:', error));
+                });
             };
             
             // Marcar/Desmarcar Tarea
@@ -507,18 +558,17 @@
                 document.getElementById('detailDispatch').innerText = task.dispatchNumber || 'Ninguno';
                 document.getElementById('detailDescription').innerText = task.description || 'Sin descripción adicional.';
                 
-                // Configurar el botón de "Completar"
                 var btnComplete = document.getElementById('btnCompleteFromModal');
                 btnComplete.onclick = function() {
                     toggleTaskComplete(task.id);
                     taskDetailsModal.hide();
                 };
 
-                // NUEVO: Configurar el botón de "Eliminar" del modal
+                // --- LÓGICA DEL BOTÓN "ELIMINAR" DENTRO DEL MODAL (ACTUALIZADA) ---
                 var btnDelete = document.getElementById('btnDeleteFromModal');
                 btnDelete.onclick = function() {
-                    deleteTask(task.id);
-                    taskDetailsModal.hide();
+                    taskDetailsModal.hide(); // Ocultar modal de detalles
+                    openDeleteConfirm(task.id, task.title); // Abrir modal de confirmación
                 };
 
                 taskDetailsModal.show();
@@ -568,6 +618,7 @@
                 }
                 
                 this.disabled = true; 
+                this.innerText = 'Guardando...'; // Indicar carga
                 fetch('/Calendar/Create', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -578,7 +629,10 @@
                         loadPendingTasks(searchInput.value);
                         eventModal.hide();
                     } else { alert('Error: ' + data.message); }
-                }).finally(() => { this.disabled = false; this.innerText = 'Guardar Evento'; });
+                }).finally(() => { 
+                    this.disabled = false; 
+                    this.innerText = 'Guardar Evento'; // Restaurar botón
+                });
             });
         });
     </script>

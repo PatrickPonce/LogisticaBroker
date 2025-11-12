@@ -5,6 +5,9 @@
     ViewData["Title"] = "Nuevo Despacho";
 }
 
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
+
 <h1>Crear Nuevo Despacho</h1>
 <hr />
 
@@ -18,7 +21,7 @@
                 <div class="card-body">
                     <div class="form-group mb-3">
                         <label asp-for="ClientId" class="control-label fw-bold">Cliente *</label>
-                        <select asp-for="ClientId" class="form-control form-select" asp-items="ViewBag.ClientId">
+                        <select asp-for="ClientId" id="ClientSelect" class="form-control" asp-items="ViewBag.ClientId">
                             <option value="">-- Seleccione un Cliente --</option>
                         </select>
                         <span asp-validation-for="ClientId" class="text-danger"></span>
@@ -118,4 +121,16 @@
 
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Inicializar Select2
+            $('#ClientSelect').select2({
+                placeholder: "-- Busque un cliente por RUC o Nombre --",
+                allowClear: true,
+                theme: "bootstrap-5" // Opcional: para que use el look de Bootstrap 5
+            });
+        });
+    </script>
 }
