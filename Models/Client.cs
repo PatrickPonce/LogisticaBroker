@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using LogisticaBroker.Models.Enums;
 
 namespace LogisticaBroker.Models
 {
@@ -33,6 +34,9 @@ namespace LogisticaBroker.Models
 
         [Display(Name = "Notas")]
         public string? Notes { get; set; }
+
+        [Display(Name = "Estado del Contrato")]
+        public ContractStatus ContractStatus { get; set; } = ContractStatus.Pending;
 
         // Auditoría básica
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

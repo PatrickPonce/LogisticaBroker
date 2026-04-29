@@ -1,2 +1,113 @@
-bin/
-obj/
+## =============================================================
+##  LogisticaBroker — .gitignore
+## =============================================================
+
+# ---------------------------------------------------------------
+# SECRETOS Y ENTORNO — nunca versionar
+# ---------------------------------------------------------------
+.env
+*.env
+!.env.example
+appsettings.Local.json
+appsettings.*.local.json
+**/secrets.json
+
+# ---------------------------------------------------------------
+# COMPILACIÓN
+# ---------------------------------------------------------------
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+[Ll]og/
+[Ll]ogs/
+
+# ---------------------------------------------------------------
+# VISUAL STUDIO / RIDER
+# ---------------------------------------------------------------
+.vs/
+.idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.rsuser
+.vscode/launch.json
+
+# ---------------------------------------------------------------
+# PUBLICACIÓN Y ARTEFACTOS
+# ---------------------------------------------------------------
+[Pp]ublish/
+*.[Pp]ublish.xml
+*.azurePubxml
+*.pubxml
+*.pubxml.user
+*_i.c
+*_p.c
+*_h.h
+*.ilk
+*.meta
+*.obj
+*.iobj
+*.pch
+*.pdb
+*.ipdb
+*.pgc
+*.pgd
+*.rsp
+*.sbr
+*.tlb
+*.tli
+*.tlh
+*.tmp
+*.tmp_proj
+*_wpftmp.csproj
+*.vspscc
+*.vssscc
+.builds
+*.pidb
+*.svclog
+*.scc
+
+# ---------------------------------------------------------------
+# BASE DE DATOS LOCAL
+# ---------------------------------------------------------------
+*.db
+*.db-shm
+*.db-wal
+*.mdf
+*.ldf
+*.ndf
+
+# ---------------------------------------------------------------
+# NuGet
+# ---------------------------------------------------------------
+*.nupkg
+*.snupkg
+**/[Pp]ackages/
+!**/[Pp]ackages/build/
+*.nuget.props
+*.nuget.targets
+nuget.config
+
+# ---------------------------------------------------------------
+# NODE / FRONTEND (si aplica)
+# ---------------------------------------------------------------
+node_modules/
+npm-debug.log*
+yarn-error.log*
+dist/
+.parcel-cache/
+
+# ---------------------------------------------------------------
+# SISTEMA OPERATIVO
+# ---------------------------------------------------------------
+.DS_Store
+Thumbs.db
+desktop.ini
+ehthumbs.db
+
+# ---------------------------------------------------------------
+# UPLOADS (archivos subidos por usuarios)
+# ---------------------------------------------------------------
+wwwroot/uploads/*
+!wwwroot/uploads/.gitkeep

@@ -21,6 +21,7 @@ namespace LogisticaBroker.Data
         public DbSet<Notification> Notifications { get; set; }
         public DbSet<CalendarEvent> CalendarEvents { get; set; }
         public DbSet<DispatchCost> DispatchCosts { get; set; }
+        public DbSet<Dam> Dams { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -34,6 +35,23 @@ namespace LogisticaBroker.Data
 
              builder.Entity<Dispatch>()
                 .HasIndex(d => d.DispatchNumber)
+                .IsUnique();
+
+            // BLNumber único cuando no es nulo
+            builder.Entity<Dispatch>()
+                .HasIndex(d => d.BLNumber)
+                .IsUnique()
+                .HasFilter("\"BLNumber\" IS NOT NULL");
+
+            // TrackingCode único
+            builder.Entity<Dispatch>()
+                .HasIndex(d => d.TrackingCode)
+                .IsUnique()
+                .HasFilter("\"TrackingCode\" IS NOT NULL");
+
+            // Un despacho tiene como máximo una DAM
+            builder.Entity<Dam>()
+                .HasIndex(d => d.DispatchId)
                 .IsUnique();
         }
     }

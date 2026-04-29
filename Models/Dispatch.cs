@@ -59,6 +59,15 @@ namespace LogisticaBroker.Models
         [Display(Name = "Valor (USD)")]
         public decimal? Value { get; set; }
 
+        /// <summary>Código interno autogenerado de seguimiento (ej. ORD-2026-0001).</summary>
+        [Display(Name = "Código de Seguimiento")]
+        public string? TrackingCode { get; set; }
+
+        /// <summary>Partida arancelaria (10 dígitos numéricos exactos).</summary>
+        [StringLength(10, MinimumLength = 10)]
+        [Display(Name = "Partida Arancelaria")]
+        public string? TariffCode { get; set; }
+
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
         public ICollection<Document> Documents { get; set; } = new List<Document>();

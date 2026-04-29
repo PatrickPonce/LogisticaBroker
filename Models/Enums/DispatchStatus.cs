@@ -17,6 +17,8 @@ namespace LogisticaBroker.Models.Enums
         [Display(Name = "Liberado")]
         Released,
         [Display(Name = "Completado")]
-        Completed
+        Completed,
+        [Display(Name = "Clasificado")]
+        Classified
     }
 }

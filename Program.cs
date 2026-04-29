@@ -1,12 +1,14 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi.Models;
+using System.Text.Json.Serialization;
 using LogisticaBroker.Data;
 using LogisticaBroker.Models;
-// --- INICIO DE CAMBIOS ---
-using LogisticaBroker.Services; // Para encontrar MailSettings y EmailSender
-using Microsoft.AspNetCore.Identity.UI.Services; // La interfaz que Identity a veces usa
-// --- FIN DE CAMBIOS ---
+using LogisticaBroker.Services;
+using Microsoft.AspNetCore.Identity.UI.Services;
 
+// Carga variables desde .env si el archivo existe (solo desarrollo local)
+DotNetEnv.Env.Load();
 
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
@@ -27,7 +29,50 @@ builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
     })
     .AddRoles<IdentityRole>() // <--- ESTO HABILITA LOS ROLES
     .AddEntityFrameworkStores<ApplicationDbContext>();
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews()
+    .AddJsonOptions(opts =>
+    {
+        // Serializar enums como strings en la API
+        opts.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+        // Evitar referencias circulares
+        opts.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+    });
+
+// --- REST API ---
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "LogisticaBroker API",
+        Version = "v1",
+        Description = "API REST para el sistema de gestión logística."
+    });
+
+    // Esquema de seguridad Bearer (cookie de Identity)
+    c.AddSecurityDefinition("cookieAuth", new OpenApiSecurityScheme
+    {
+        Type = SecuritySchemeType.ApiKey,
+        In = ParameterLocation.Cookie,
+        Name = ".AspNetCore.Identity.Application",
+        Description = "Cookie de sesión generada por ASP.NET Core Identity"
+    });
+
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "cookieAuth"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
 
 builder.Services.AddScoped<LogisticaBroker.Services.NotificationService>();
 
@@ -61,11 +106,16 @@ using (var scope = app.Services.CreateScope())
 if (app.Environment.IsDevelopment())
 {
     app.UseMigrationsEndPoint();
+    app.UseSwagger();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "LogisticaBroker API v1");
+        c.RoutePrefix = "api/docs";
+    });
 }
 else
 {
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
@@ -81,6 +131,9 @@ app.UseAuthorization();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
+
+// Rutas API (los ApiControllers se registran automáticamente por atributos)
+app.MapControllers();
 
 app.MapRazorPages();
 

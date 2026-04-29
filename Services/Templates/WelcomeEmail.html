@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bienvenido a Logística Broker S.A.C.</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f6f9;font-family:Arial,Helvetica,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f9;padding:40px 0;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+
+          <!-- Header -->
+          <tr>
+            <td style="background:#1a3c6e;padding:32px 40px;text-align:center;">
+              <h1 style="margin:0;color:#ffffff;font-size:22px;letter-spacing:1px;">
+                LOGÍSTICA BROKER S.A.C.
+              </h1>
+              <p style="margin:6px 0 0;color:#a8c4e0;font-size:13px;">
+                Tu socio estratégico en comercio exterior
+              </p>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="padding:40px 40px 32px;">
+              <h2 style="margin:0 0 16px;color:#1a3c6e;font-size:18px;">
+                ¡Bienvenido(a), {{CompanyName}}!
+              </h2>
+              <p style="margin:0 0 20px;color:#444;font-size:15px;line-height:1.6;">
+                Tu registro en la plataforma de Logística Broker S.A.C. ha sido completado exitosamente.
+                A continuación encontrarás tus credenciales de acceso:
+              </p>
+
+              <!-- Credentials box -->
+              <table width="100%" cellpadding="0" cellspacing="0"
+                     style="background:#f0f4fa;border-left:4px solid #1a3c6e;border-radius:4px;margin:0 0 28px;">
+                <tr>
+                  <td style="padding:20px 24px;">
+                    <p style="margin:0 0 10px;font-size:14px;color:#666;">Usuario (correo)</p>
+                    <p style="margin:0 0 18px;font-size:16px;font-weight:bold;color:#1a3c6e;">
+                      {{Email}}
+                    </p>
+                    <p style="margin:0 0 10px;font-size:14px;color:#666;">Contraseña temporal</p>
+                    <p style="margin:0;font-size:18px;font-weight:bold;color:#c0392b;
+                               letter-spacing:2px;font-family:Courier New,monospace;">
+                      {{TempPassword}}
+                    </p>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="margin:0 0 24px;color:#444;font-size:14px;line-height:1.6;">
+                Por seguridad, te recomendamos cambiar tu contraseña al ingresar por primera vez.
+              </p>
+
+              <!-- CTA Button -->
+              <table cellpadding="0" cellspacing="0" style="margin:0 0 32px;">
+                <tr>
+                  <td style="background:#1a3c6e;border-radius:6px;">
+                    <a href="{{LoginUrl}}"
+                       style="display:inline-block;padding:14px 32px;color:#ffffff;
+                              text-decoration:none;font-size:15px;font-weight:bold;">
+                      Ingresar al Portal
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="margin:0;color:#888;font-size:13px;line-height:1.6;">
+                Si no solicitaste este registro o tienes alguna duda, contáctanos en
+                <a href="mailto:soporte@logisticabroker.com" style="color:#1a3c6e;">
+                  soporte@logisticabroker.com
+                </a>
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background:#f0f4fa;padding:20px 40px;text-align:center;
+                       border-top:1px solid #dde4ef;">
+              <p style="margin:0;color:#999;font-size:12px;">
+                © {{Year}} Logística Broker S.A.C. · RUC 20612345678 ·
+                Av. La Marina 123, San Miguel, Lima, Perú
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

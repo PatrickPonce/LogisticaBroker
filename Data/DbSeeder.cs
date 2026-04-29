@@ -46,5 +46,6 @@ namespace LogisticaBroker.Data
     {
         public const string Admin = "Admin";
         public const string Client = "Client";
+        public const string Cliente = "Client"; // alias en español
     }
 }
